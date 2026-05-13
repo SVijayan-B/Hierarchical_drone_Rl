@@ -1,0 +1,69 @@
+# Python bytecode / cache
+__pycache__/
+*.py[cod]
+*$py.class
+
+# Build / packaging
+build/
+dist/
+*.egg-info/
+.eggs/
+*.whl
+
+# Virtual environments
+.venv/
+venv/
+env/
+ENV/
+
+# Conda
+.conda/
+conda-meta/
+
+# Jupyter
+.ipynb_checkpoints/
+
+# Test / coverage
+.pytest_cache/
+.coverage
+.coverage.*
+htmlcov/
+.mypy_cache/
+.ruff_cache/
+
+# Logs
+*.log
+logs/
+
+# IDE / editor
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Drone / RL outputs
+results/
+results_*/
+results_hierarchical/
+
+# Stable-Baselines3 artifacts
+*.zip
+*.pkl
+*.npz
+
+# TensorBoard
+runs/
+**/tb/
+
+# PyBullet recordings / videos
+*.mp4
+*.avi
+*.gif
+
+# Temporary files
+*.tmp
+*.temp
