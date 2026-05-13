@@ -42,10 +42,10 @@ class TaskConfig:
     world_xy_limit: float = 2.5
     world_z_min: float = 0.1
     world_z_max: float = 2.2
-    target_threshold_m: float = 0.60
-    obstacle_count: int = 0
-    obstacle_min_size: float = 0.10
-    obstacle_max_size: float = 0.35
+    target_threshold_m: float = 0.80
+    obstacle_count: int = 6
+    obstacle_min_size: float = 0.12
+    obstacle_max_size: float = 0.30
 
 
 @dataclass
