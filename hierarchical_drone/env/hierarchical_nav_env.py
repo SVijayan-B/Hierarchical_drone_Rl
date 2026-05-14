@@ -509,6 +509,11 @@ class HierarchicalNavEnv(gym.Env):
             "hover_on_target_sec": float(self.hover_on_target_counter / self.sim_cfg.ctrl_freq),
             "success": float(success),
             "progress_reward": progress_reward,
+            "vel_xy": float(np.linalg.norm(vel[0:2])),
+            "vel_z": float(abs(vel[2])),
+            "tilt_abs": float(abs(rpy[0]) + abs(rpy[1])),
+            "ang_rate_norm": float(np.linalg.norm(rates)),
+            "power_proxy": float(np.linalg.norm(motor_action[0, :] / max(self.drone_cfg.hover_rpm, 1e-6))),
         }
         return obs, float(reward), done, False, info
 
