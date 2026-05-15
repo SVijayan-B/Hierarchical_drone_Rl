@@ -129,8 +129,8 @@ The observation vector in `hierarchical_nav_env.py` contains normalized values o
   - previous action (4D)
 
 Why this matters:
-- Position/velocity tells “where and how fast”.
-- IMU terms tell “how stable or tilted”.
+- Position/velocity tells ï¿½where and how fastï¿½.
+- IMU terms tell ï¿½how stable or tiltedï¿½.
 - Ultrasonic terms give local safety.
 - Relative target terms give navigation objective.
 - Previous action helps command smoothness.
@@ -183,7 +183,7 @@ This reward shaping encourages:
 
 ## 7. Success / Termination Logic
 
-Current success is stricter than “touching target”:
+Current success is stricter than ï¿½touching targetï¿½:
 
 - drone must be near target XY
 - maintain stable altitude/attitude/velocity
@@ -294,3 +294,8 @@ If no learning:
   - required for genuine RL performance validation.
 
 Use demo mode for presentation stability, and policy mode for research/training validation.
+
+
+![App Demo](assests/Demo.gif)
+
+![App Obstacles](assests/Obstacles.gif)
