@@ -296,6 +296,6 @@ If no learning:
 Use demo mode for presentation stability, and policy mode for research/training validation.
 
 
-![App Demo](assests/Demo.gif)
+![Drone Demo and stablitiy](hierarchical_drone/Demo.gif)
 
-![App Obstacles](assests/Obstacles.gif)
+![Drone Obstacles avoidance](hierarchical_drone/Obstacles.gif)
