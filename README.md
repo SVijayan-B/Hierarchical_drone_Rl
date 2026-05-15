@@ -11,6 +11,11 @@ The architecture follows a realistic cascaded concept:
 
 `RL policy (high-level) -> velocity command -> PID stabilization (low-level) -> motor RPM -> drone physics`
 
+
+![Drone Demo and stablitiy](hierarchical_drone/demo.gif)
+
+![Drone Obstacles avoidance](hierarchical_drone/obstacles.gif)
+
 ---
 
 ## 1. Core Idea
@@ -296,6 +301,3 @@ If no learning:
 Use demo mode for presentation stability, and policy mode for research/training validation.
 
 
-![Drone Demo and stablitiy](hierarchical_drone/Demo.gif)
-
-![Drone Obstacles avoidance](hierarchical_drone/Obstacles.gif)
