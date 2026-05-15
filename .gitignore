@@ -48,6 +48,7 @@ Thumbs.db
 results/
 results_*/
 results_hierarchical/
+results_pid_vs_rl_pid/
 
 # Stable-Baselines3 artifacts
 *.zip

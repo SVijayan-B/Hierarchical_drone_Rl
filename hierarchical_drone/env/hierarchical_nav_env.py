@@ -79,6 +79,7 @@ class HierarchicalNavEnv(gym.Env):
         self.hover_on_target_steps_required = int(3.0 * self.sim_cfg.ctrl_freq)
         self.hover_on_target_counter = 0
         self.wind_phase = np.random.uniform(0.0, 2.0 * np.pi, size=3).astype(np.float32)
+        self.fixed_target_xyz: Optional[np.ndarray] = None
 
         obs_dim = 3 + 3 + 3 + 3 + 3 + 1 + 5 + 4
         self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(obs_dim,), dtype=np.float32)
@@ -93,14 +94,17 @@ class HierarchicalNavEnv(gym.Env):
             p.removeBody(oid, physicsClientId=self.client)
         self.obstacle_ids = []
 
-    def _spawn_target(self):
+    def _spawn_target(self, xyz: Optional[np.ndarray] = None):
         # Keep target at a fixed cruise altitude so navigation is mainly XY.
         # Visualize it as a small point marker (sphere), not a box.
-        self.target = np.array([
-            random.uniform(-1.2, 1.2),
-            random.uniform(-1.2, 1.2),
-            self.hover_z_ref,
-        ], dtype=np.float32)
+        if xyz is not None:
+            self.target = np.asarray(xyz, dtype=np.float32)
+        else:
+            self.target = np.array([
+                random.uniform(-1.2, 1.2),
+                random.uniform(-1.2, 1.2),
+                self.hover_z_ref,
+            ], dtype=np.float32)
         vis = p.createVisualShape(
             p.GEOM_SPHERE,
             radius=0.03,
@@ -201,7 +205,15 @@ class HierarchicalNavEnv(gym.Env):
         self._clear_scene()
         state, _ = self.env.reset(seed=seed, options=options)
         self._spawn_obstacles()
-        self._spawn_target()
+        fixed_target = self.fixed_target_xyz
+        if options and "target_xyz" in options:
+            fixed_target = np.asarray(options["target_xyz"], dtype=np.float32)
+        if fixed_target is not None:
+            fixed_target = np.asarray(fixed_target, dtype=np.float32)
+            if fixed_target.shape[0] >= 3:
+                self.hover_z_ref = float(fixed_target[2])
+        self._spawn_target(fixed_target)
+        self.fixed_target_xyz = None
 
         self.imu.reset()
         self.prev_action[:] = 0.0
@@ -232,6 +244,7 @@ class HierarchicalNavEnv(gym.Env):
 
         vel_cmd, yaw_rate_cmd = self._action_to_vel_cmd(action)
         motor_action = np.ones((1, 4), dtype=np.float32) * self.drone_cfg.hover_rpm
+        last_rpm = motor_action[0, :].copy()
 
         for _ in range(self.rl_every_n):
             self._apply_wind_disturbance()
@@ -269,6 +282,7 @@ class HierarchicalNavEnv(gym.Env):
                 target_rpy_rates=target_rpy_rates,
             )
             motor_action[0, :] = np.clip(rpm, self.drone_cfg.min_rpm, self.drone_cfg.max_rpm)
+            last_rpm = motor_action[0, :].copy()
 
             if np.any(terminated) or np.any(truncated):
                 break
@@ -332,6 +346,8 @@ class HierarchicalNavEnv(gym.Env):
             reward -= 6.0  # Strong penalty for leaving safe operating area.
 
         self.prev_dist = dist_xy
+        hover = max(self.drone_cfg.hover_rpm, 1e-6)
+        power_proxy_step = float(np.sum(np.square(last_rpm / hover)))
         info: Dict[str, float] = {
             "distance": dist,
             "distance_xy": dist_xy,
@@ -340,6 +356,8 @@ class HierarchicalNavEnv(gym.Env):
             "hover_on_target_sec": float(self.hover_on_target_counter / self.sim_cfg.ctrl_freq),
             "success": float(success),
             "progress_reward": progress_reward,
+            "power_proxy_step": power_proxy_step,
+            "altitude_error": abs(float(s[2]) - self.hover_z_ref),
         }
         return obs, float(reward), done, False, info
 
