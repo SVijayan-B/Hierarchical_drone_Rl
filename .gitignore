@@ -61,7 +61,6 @@ runs/
 # PyBullet recordings / videos
 *.mp4
 *.avi
-*.gif
 
 # Temporary files
 *.tmp
