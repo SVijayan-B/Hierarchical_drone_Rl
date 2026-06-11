@@ -20,18 +20,28 @@ from hierarchical_drone.config.settings import (
 )
 from hierarchical_drone.sensors.imu import IMUSensor
 from hierarchical_drone.sensors.ultrasonic import UltrasonicArray
+from hierarchical_drone.controllers.adaptive_scheduler import AdaptiveGainScheduler
 
 
 class HierarchicalNavEnv(gym.Env):
     metadata = {"render_modes": ["human"]}
 
-    def __init__(self, sim: SimConfig, task: TaskConfig, sensor_cfg: SensorConfig, action_cfg: ActionConfig):
+    def __init__(self, sim: SimConfig, task: TaskConfig, sensor_cfg: SensorConfig, action_cfg: ActionConfig, use_adaptive_scheduler: bool = True, demo_guided_mode: bool = True):
         super().__init__()
         self.sim_cfg = sim
         self.task_cfg = task
         self.sensor_cfg = sensor_cfg
         self.action_cfg = action_cfg
         self.drone_cfg = DroneConfig()
+
+        self.use_adaptive_scheduler = use_adaptive_scheduler
+        self.scheduler = AdaptiveGainScheduler()
+        self.current_wind_magnitude = 0.0
+        self.control_step_counter = 0
+        self.gain_scale = 1.0
+        self.pos_history = []
+        self.dist_history = []
+        self.start_pos = np.zeros(3, dtype=np.float32)
 
         self.ctrl_dt = 1.0 / self.sim_cfg.ctrl_freq
         self.rl_every_n = max(1, int(self.sim_cfg.ctrl_freq / self.sim_cfg.rl_freq))
@@ -58,6 +68,14 @@ class HierarchicalNavEnv(gym.Env):
         self.imu = IMUSensor(sensor_cfg.imu_angle_noise_std, sensor_cfg.imu_rate_noise_std, sensor_cfg.imu_acc_noise_std)
         self.ultra = UltrasonicArray(sensor_cfg.ultrasonic_max_range, sensor_cfg.ultrasonic_noise_std)
 
+        # Store base gains for the scheduler
+        self.P_COEFF_FOR_BASE = np.copy(self.stab_ctrl.P_COEFF_FOR)
+        self.I_COEFF_FOR_BASE = np.copy(self.stab_ctrl.I_COEFF_FOR)
+        self.D_COEFF_FOR_BASE = np.copy(self.stab_ctrl.D_COEFF_FOR)
+        self.P_COEFF_TOR_BASE = np.copy(self.stab_ctrl.P_COEFF_TOR)
+        self.I_COEFF_TOR_BASE = np.copy(self.stab_ctrl.I_COEFF_TOR)
+        self.D_COEFF_TOR_BASE = np.copy(self.stab_ctrl.D_COEFF_TOR)
+
         self.target = np.zeros(3, dtype=np.float32)
         self.target_vis_id: Optional[int] = None
         self.obstacle_ids = []
@@ -70,7 +88,7 @@ class HierarchicalNavEnv(gym.Env):
         self.takeoff_steps = int(4.0 * self.sim_cfg.ctrl_freq)
         self.nav_cmd_lpf = np.zeros(3, dtype=np.float32)
         self.guidance_blend = 0.85
-        self.demo_guided_mode = True
+        self.demo_guided_mode = demo_guided_mode
         self.camera_follow = True
         self.cam_target = np.array([0.0, 0.0, 0.8], dtype=np.float32)
         self.cam_alpha = 0.10
@@ -132,12 +150,14 @@ class HierarchicalNavEnv(gym.Env):
         """Apply configurable oscillatory wind + small random gusts in world frame."""
         amp = np.array(self.sim_cfg.wind_disturbance, dtype=np.float32)
         if float(np.linalg.norm(amp)) < 1e-9:
+            self.current_wind_magnitude = 0.0
             return
         freq = np.array(self.sim_cfg.wind_freq_hz, dtype=np.float32)
         t = self.step_count * self.ctrl_dt
         sinus = np.sin(2.0 * np.pi * freq * t + self.wind_phase)
         gust = np.random.normal(0.0, 1.0, size=3).astype(np.float32) * (self.sim_cfg.wind_gust_scale * amp)
         wind_force = amp * sinus + gust
+        self.current_wind_magnitude = float(np.linalg.norm(wind_force))
         p.applyExternalForce(
             objectUniqueId=self.drone_id,
             linkIndex=-1,
@@ -212,6 +232,26 @@ class HierarchicalNavEnv(gym.Env):
         self.fall_counter = 0
         self.hover_on_target_counter = 0
         self.wind_phase = np.random.uniform(0.0, 2.0 * np.pi, size=3).astype(np.float32)
+
+        # Reset scheduler-related variables
+        self.control_step_counter = 0
+        self.gain_scale = 1.0
+        self.current_wind_magnitude = 0.0
+
+        # Apply base gains initially
+        self.stab_ctrl.P_COEFF_FOR = np.copy(self.P_COEFF_FOR_BASE)
+        self.stab_ctrl.I_COEFF_FOR = np.copy(self.I_COEFF_FOR_BASE)
+        self.stab_ctrl.D_COEFF_FOR = np.copy(self.D_COEFF_FOR_BASE)
+        self.stab_ctrl.P_COEFF_TOR = np.copy(self.P_COEFF_TOR_BASE)
+        self.stab_ctrl.I_COEFF_TOR = np.copy(self.I_COEFF_TOR_BASE)
+        self.stab_ctrl.D_COEFF_TOR = np.copy(self.D_COEFF_TOR_BASE)
+
+        # Clear metrics histories
+        self.start_pos = np.array(state[0][0:3], dtype=np.float32)
+        self.pos_history = [self.start_pos.copy()]
+        initial_rel = self.target - self.start_pos
+        self.dist_history = [float(np.linalg.norm(initial_rel))]
+
         self.cam_target[:] = np.array([state[0][0], state[0][1], 0.8], dtype=np.float32)
         if self.sim_cfg.gui and self.camera_follow:
             p.resetDebugVisualizerCamera(
@@ -234,9 +274,37 @@ class HierarchicalNavEnv(gym.Env):
         motor_action = np.ones((1, 4), dtype=np.float32) * self.drone_cfg.hover_rpm
 
         for _ in range(self.rl_every_n):
+            self.control_step_counter += 1
             self._apply_wind_disturbance()
             state, _, terminated, truncated, _ = self.env.step(motor_action)
             s = state[0]
+
+            # Record state histories for metrics
+            self.pos_history.append(np.array(s[0:3], dtype=np.float32))
+            rel = self.target - s[0:3]
+            self.dist_history.append(float(np.linalg.norm(rel)))
+
+            # Update gains every 1 second of simulation time
+            if self.use_adaptive_scheduler and (self.control_step_counter % self.sim_cfg.ctrl_freq == 0):
+                vel_mag = float(np.linalg.norm(s[10:13]))
+                omega_mag = float(np.linalg.norm(s[13:16]))
+                dist_to_target = float(np.linalg.norm(self.target - s[0:3]))
+
+                self.gain_scale = self.scheduler.get_gain_scale(
+                    velocity_mag=vel_mag,
+                    angular_rate_mag=omega_mag,
+                    distance_to_target=dist_to_target,
+                    wind_disturbance_mag=self.current_wind_magnitude
+                )
+
+                # Apply scaled gains
+                self.stab_ctrl.P_COEFF_FOR = self.P_COEFF_FOR_BASE * self.gain_scale
+                self.stab_ctrl.I_COEFF_FOR = self.I_COEFF_FOR_BASE * self.gain_scale
+                self.stab_ctrl.D_COEFF_FOR = self.D_COEFF_FOR_BASE * self.gain_scale
+                self.stab_ctrl.P_COEFF_TOR = self.P_COEFF_TOR_BASE * self.gain_scale
+                self.stab_ctrl.I_COEFF_TOR = self.I_COEFF_TOR_BASE * self.gain_scale
+                self.stab_ctrl.D_COEFF_TOR = self.D_COEFF_TOR_BASE * self.gain_scale
+
             # RL gives high-level desired velocity; DSLPID handles stabilization to motor RPM.
             target_rpy_rates = np.array([0.0, 0.0, yaw_rate_cmd], dtype=np.float32)
             # Diagonal guidance: move in XY while climbing (no strict L-shaped behavior).
@@ -340,7 +408,70 @@ class HierarchicalNavEnv(gym.Env):
             "hover_on_target_sec": float(self.hover_on_target_counter / self.sim_cfg.ctrl_freq),
             "success": float(success),
             "progress_reward": progress_reward,
+            "gain_scale": self.gain_scale,
+            "kp_pos_x": float(self.stab_ctrl.P_COEFF_FOR[0]),
+            "kp_pos_y": float(self.stab_ctrl.P_COEFF_FOR[1]),
+            "kp_pos_z": float(self.stab_ctrl.P_COEFF_FOR[2]),
+            "ki_pos_x": float(self.stab_ctrl.I_COEFF_FOR[0]),
+            "ki_pos_y": float(self.stab_ctrl.I_COEFF_FOR[1]),
+            "ki_pos_z": float(self.stab_ctrl.I_COEFF_FOR[2]),
+            "kd_pos_x": float(self.stab_ctrl.D_COEFF_FOR[0]),
+            "kd_pos_y": float(self.stab_ctrl.D_COEFF_FOR[1]),
+            "kd_pos_z": float(self.stab_ctrl.D_COEFF_FOR[2]),
+            "kp_att_r": float(self.stab_ctrl.P_COEFF_TOR[0]),
+            "kp_att_p": float(self.stab_ctrl.P_COEFF_TOR[1]),
+            "kp_att_y": float(self.stab_ctrl.P_COEFF_TOR[2]),
+            "ki_att_r": float(self.stab_ctrl.I_COEFF_TOR[0]),
+            "ki_att_p": float(self.stab_ctrl.I_COEFF_TOR[1]),
+            "ki_att_y": float(self.stab_ctrl.I_COEFF_TOR[2]),
+            "kd_att_r": float(self.stab_ctrl.D_COEFF_TOR[0]),
+            "kd_att_p": float(self.stab_ctrl.D_COEFF_TOR[1]),
+            "kd_att_y": float(self.stab_ctrl.D_COEFF_TOR[2]),
+            "vel": vel.tolist(),
+            "rpy": rpy.tolist(),
+            "rates": rates.tolist(),
+            "rpm": motor_action[0].tolist(),
         }
+
+        if done:
+            mean_tracking_err = float(np.mean(self.dist_history))
+            rmse_tracking_err = float(np.sqrt(np.mean(np.square(self.dist_history))))
+
+            start_pos = self.start_pos
+            target = self.target
+            path_vector = target - start_pos
+            path_len = np.linalg.norm(path_vector)
+            if path_len > 1e-6:
+                unit_path = path_vector / path_len
+                projections = [np.dot(pos - start_pos, unit_path) for pos in self.pos_history]
+                max_proj = np.max(projections)
+                overshoot = float(max(0.0, max_proj - path_len))
+                overshoot_pct = float((overshoot / path_len) * 100.0)
+            else:
+                overshoot = 0.0
+                overshoot_pct = 0.0
+
+            z_overshoot = float(max(0.0, np.max([pos[2] for pos in self.pos_history]) - target[2]))
+
+            settled_idx = -1
+            threshold = self.task_cfg.target_threshold_m
+            for idx in range(len(self.dist_history) - 1, -1, -1):
+                if self.dist_history[idx] >= threshold:
+                    settled_idx = idx + 1
+                    break
+
+            if settled_idx >= len(self.dist_history):
+                settling_time = float(self.max_steps * self.ctrl_dt)
+            else:
+                settling_time = float(settled_idx * self.ctrl_dt)
+
+            info["mean_tracking_error"] = mean_tracking_err
+            info["rmse_tracking_error"] = rmse_tracking_err
+            info["overshoot"] = overshoot
+            info["overshoot_percent"] = overshoot_pct
+            info["z_overshoot"] = z_overshoot
+            info["settling_time"] = settling_time
+
         return obs, float(reward), done, False, info
 
     def close(self):
