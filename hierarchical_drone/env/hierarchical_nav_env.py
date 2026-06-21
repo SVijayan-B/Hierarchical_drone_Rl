@@ -26,7 +26,7 @@ from hierarchical_drone.controllers.adaptive_scheduler import AdaptiveGainSchedu
 class HierarchicalNavEnv(gym.Env):
     metadata = {"render_modes": ["human"]}
 
-    def __init__(self, sim: SimConfig, task: TaskConfig, sensor_cfg: SensorConfig, action_cfg: ActionConfig, use_adaptive_scheduler: bool = True, demo_guided_mode: bool = True):
+    def __init__(self, sim: SimConfig, task: TaskConfig, sensor_cfg: SensorConfig, action_cfg: ActionConfig, use_adaptive_scheduler: bool = True, demo_guided_mode: bool = True, use_mpc_layer: bool = False):
         super().__init__()
         self.sim_cfg = sim
         self.task_cfg = task
@@ -36,6 +36,10 @@ class HierarchicalNavEnv(gym.Env):
 
         self.use_adaptive_scheduler = use_adaptive_scheduler
         self.scheduler = AdaptiveGainScheduler()
+        self.use_mpc_layer = use_mpc_layer
+        if self.use_mpc_layer:
+            from hierarchical_drone.controllers.mpc_controller import MPCController
+            self.mpc = MPCController(horizon=20, dt=0.1)
         self.current_wind_magnitude = 0.0
         self.control_step_counter = 0
         self.gain_scale = 1.0
@@ -45,7 +49,7 @@ class HierarchicalNavEnv(gym.Env):
 
         self.ctrl_dt = 1.0 / self.sim_cfg.ctrl_freq
         self.rl_every_n = max(1, int(self.sim_cfg.ctrl_freq / self.sim_cfg.rl_freq))
-        self.max_steps = int(self.sim_cfg.episode_sec * self.sim_cfg.ctrl_freq)
+        self.max_steps = int(self.sim_cfg.episode_sec * self.sim_cfg.rl_freq)
 
         self.env = CtrlAviary(
             drone_model=DroneModel.CF2X,
@@ -85,16 +89,17 @@ class HierarchicalNavEnv(gym.Env):
         self.prev_dist = 0.0
         self.step_count = 0
         self.hover_z_ref = 1.0
-        self.takeoff_steps = int(4.0 * self.sim_cfg.ctrl_freq)
+        self.takeoff_steps = int(4.0 * self.sim_cfg.rl_freq)
+        self.path_blocked = False
         self.nav_cmd_lpf = np.zeros(3, dtype=np.float32)
         self.guidance_blend = 0.85
         self.demo_guided_mode = demo_guided_mode
         self.camera_follow = True
         self.cam_target = np.array([0.0, 0.0, 0.8], dtype=np.float32)
         self.cam_alpha = 0.10
-        self.fall_grace_steps = int(3.0 * self.sim_cfg.ctrl_freq)
+        self.fall_grace_steps = int(3.0 * self.sim_cfg.rl_freq)
         self.fall_counter = 0
-        self.hover_on_target_steps_required = int(3.0 * self.sim_cfg.ctrl_freq)
+        self.hover_on_target_steps_required = int(3.0 * self.sim_cfg.rl_freq)
         self.hover_on_target_counter = 0
         self.wind_phase = np.random.uniform(0.0, 2.0 * np.pi, size=3).astype(np.float32)
 
@@ -110,13 +115,17 @@ class HierarchicalNavEnv(gym.Env):
         for oid in self.obstacle_ids:
             p.removeBody(oid, physicsClientId=self.client)
         self.obstacle_ids = []
+        if hasattr(self, "debug_line_ids"):
+            self._clear_debug_lines()
 
     def _spawn_target(self):
         # Keep target at a fixed cruise altitude so navigation is mainly XY.
-        # Visualize it as a small point marker (sphere), not a box.
+        # Ensure it is far from starting position [0, 0] (between 1.4 and 1.9 meters)
+        theta = random.uniform(0.0, 2.0 * np.pi)
+        dist = random.uniform(1.4, 1.9)
         self.target = np.array([
-            random.uniform(-1.2, 1.2),
-            random.uniform(-1.2, 1.2),
+            dist * np.cos(theta),
+            dist * np.sin(theta),
             self.hover_z_ref,
         ], dtype=np.float32)
         vis = p.createVisualShape(
@@ -134,17 +143,98 @@ class HierarchicalNavEnv(gym.Env):
         )
 
     def _spawn_obstacles(self):
-        for _ in range(self.task_cfg.obstacle_count):
-            hx = random.uniform(self.task_cfg.obstacle_min_size, self.task_cfg.obstacle_max_size)
-            hy = random.uniform(self.task_cfg.obstacle_min_size, self.task_cfg.obstacle_max_size)
-            hz = random.uniform(0.15, 0.6)
-            x = random.uniform(-2.0, 2.0)
-            y = random.uniform(-2.0, 2.0)
-            z = hz
+        self.obstacle_ids = []
+        self.walls = []
+        
+        # Start is [0, 0], Target is self.target[0:2]
+        tx, ty = self.target[0], self.target[1]
+        dist = float(np.linalg.norm(self.target[0:2]))
+        if dist < 1e-3:
+            return
+            
+        u = np.array([tx, ty], dtype=np.float32) / dist
+        v = np.array([-u[1], u[0]], dtype=np.float32)
+        yaw = float(np.arctan2(u[1], u[0]))
+        
+        # Decide maze offset sign randomly to swap left/right slalom path
+        s1 = random.choice([-1.0, 1.0])
+        
+        # Define the 4 walls: (lambda_along_path, lateral_offset, local_hx, local_hy, yaw_offset)
+        wall_specs = [
+            (0.28, s1 * 0.35, 0.5, 0.08, np.pi/2),   # Wall 1: Perpendicular gate
+            (0.55, -s1 * 0.35, 0.5, 0.08, np.pi/2),  # Wall 2: Perpendicular gate opposite
+            (0.82, s1 * 0.35, 0.5, 0.08, np.pi/2),   # Wall 3: Perpendicular gate same as 1
+            (0.55, 0.0, 0.4, 0.08, 0.0)              # Wall 4: Parallel center divider
+        ]
+        
+        for idx, (lam, lat, hx, hy, yaw_offset) in enumerate(wall_specs):
+            pos_2d = lam * np.array([tx, ty], dtype=np.float32) + lat * dist * v
+            hz = random.uniform(0.4, 0.7)
+            pos_3d = [float(pos_2d[0]), float(pos_2d[1]), hz]
+            
+            w_yaw = yaw + yaw_offset
+            
             vis = p.createVisualShape(p.GEOM_BOX, halfExtents=[hx, hy, hz], rgbaColor=[0.7, 0.5, 0.2, 1], physicsClientId=self.client)
             col = p.createCollisionShape(p.GEOM_BOX, halfExtents=[hx, hy, hz], physicsClientId=self.client)
-            oid = p.createMultiBody(0.0, col, vis, [x, y, z], physicsClientId=self.client)
+            orientation = p.getQuaternionFromEuler([0, 0, w_yaw])
+            oid = p.createMultiBody(
+                baseMass=0.0,
+                baseCollisionShapeIndex=col,
+                baseVisualShapeIndex=vis,
+                basePosition=pos_3d,
+                baseOrientation=orientation,
+                physicsClientId=self.client
+            )
             self.obstacle_ids.append(oid)
+            self.walls.append((float(pos_2d[0]), float(pos_2d[1]), hx, hy, w_yaw))
+
+    def _get_lookahead_waypoint(self, cur_pos):
+        if not hasattr(self, "global_path") or len(self.global_path) == 0:
+            return np.array([self.target[0], self.target[1], self.hover_z_ref], dtype=np.float32)
+            
+        min_dist = float('inf')
+        closest_idx = 0
+        for i, wp in enumerate(self.global_path):
+            d = np.linalg.norm(np.array(wp) - cur_pos[0:2])
+            if d < min_dist:
+                min_dist = d
+                closest_idx = i
+                
+        lookahead_dist = 0.18
+        target_wp_2d = self.global_path[-1]
+        for i in range(closest_idx, len(self.global_path)):
+            d = np.linalg.norm(np.array(self.global_path[i]) - cur_pos[0:2])
+            if d >= lookahead_dist:
+                target_wp_2d = self.global_path[i]
+                break
+                
+        return np.array([target_wp_2d[0], target_wp_2d[1], self.hover_z_ref], dtype=np.float32)
+
+    def _clear_debug_lines(self):
+        if hasattr(self, "debug_line_ids"):
+            for line_id in self.debug_line_ids:
+                try:
+                    p.removeUserDebugItem(line_id, physicsClientId=self.client)
+                except Exception:
+                    pass
+            self.debug_line_ids = []
+
+    def _draw_path(self):
+        self._clear_debug_lines()
+        if hasattr(self, "global_path") and len(self.global_path) > 1:
+            for i in range(len(self.global_path) - 1):
+                p1 = [self.global_path[i][0], self.global_path[i][1], 1.0]
+                p2 = [self.global_path[i+1][0], self.global_path[i+1][1], 1.0]
+                try:
+                    line_id = p.addUserDebugLine(
+                        p1, p2,
+                        lineColorRGB=[0.0, 0.0, 1.0],  # Blue line
+                        lineWidth=4.0,
+                        physicsClientId=self.client
+                    )
+                    self.debug_line_ids.append(line_id)
+                except Exception:
+                    pass
 
     def _apply_wind_disturbance(self):
         """Apply configurable oscillatory wind + small random gusts in world frame."""
@@ -220,14 +310,29 @@ class HierarchicalNavEnv(gym.Env):
         super().reset(seed=seed)
         self._clear_scene()
         state, _ = self.env.reset(seed=seed, options=options)
-        self._spawn_obstacles()
+        self.last_state = state[0]
         self._spawn_target()
+        self._spawn_obstacles()
+
+        # Initialize dynamic occupancy grid map and planner ( drone is unaware of wall positions initially)
+        from hierarchical_drone.utils.a_star import AStarPlanner
+        self.planner = AStarPlanner(resolution=0.10, safety_margin=0.18)
+        self.mapped_grid = np.zeros((self.planner.nx, self.planner.ny), dtype=np.int8)
+        start_pos_2d = [float(state[0][0]), float(state[0][1])]
+        target_pos_2d = [float(self.target[0]), float(self.target[1])]
+        self.global_path, success = self.planner.plan_on_grid(start_pos_2d, target_pos_2d, self.mapped_grid)
+        self.path_blocked = not success
+        self.debug_line_ids = []
+        self._draw_path()
 
         self.imu.reset()
         self.prev_action[:] = 0.0
         self.smoothed_action[:] = 0.0
         self.step_count = 0
         self.hover_z_ref = 1.0
+        self.clearance_hold_counter = 0
+        self.path_blocked = False
+        self.pos_ref = np.array(state[0][0:3], dtype=np.float32)
         self.nav_cmd_lpf[:] = 0.0
         self.fall_counter = 0
         self.hover_on_target_counter = 0
@@ -249,6 +354,9 @@ class HierarchicalNavEnv(gym.Env):
         # Clear metrics histories
         self.start_pos = np.array(state[0][0:3], dtype=np.float32)
         self.pos_history = [self.start_pos.copy()]
+        self.vel_history = [np.array(state[0][10:13], dtype=np.float32)]
+        self.control_effort_history = []
+        self.wp_error_history = []
         initial_rel = self.target - self.start_pos
         self.dist_history = [float(np.linalg.norm(initial_rel))]
 
@@ -270,7 +378,107 @@ class HierarchicalNavEnv(gym.Env):
         self.step_count += 1
         self.prev_action = np.asarray(action, dtype=np.float32)
 
-        vel_cmd, yaw_rate_cmd = self._action_to_vel_cmd(action)
+        s = self.last_state
+        cur_pos = s[0:3]
+
+        # Read ultrasonic sensors (10 Hz)
+        ultra = self.ultra.read(self.drone_id, cur_pos, s[7:10], self.client)
+
+        # Takeoff phase vs. Navigation phase
+        if self.step_count <= self.takeoff_steps:
+            # During takeoff, hold horizontal position [0,0] and ascend to hover_z_ref (1.0)
+            target_wp_astar = np.array([0.0, 0.0, 1.0], dtype=np.float32)
+            self.hover_z_ref = 1.0
+            vel_cmd = np.zeros(3, dtype=np.float32)
+            yaw_rate_cmd = 0.0
+            target_wp = target_wp_astar
+        else:
+            # 1. Dynamic wall climbing logic based on sensors (only if path is blocked)
+            # Check horizontal distance to walls
+            obs_dist = min(ultra["front"], ultra["left"], ultra["right"], ultra["rear"])
+            if self.path_blocked and obs_dist < 0.45:
+                # Obstacle detected and path is blocked! Climb over it.
+                self.hover_z_ref = 1.55
+                self.clearance_hold_counter = 30  # Hold for 3 seconds / 30 steps
+            else:
+                if self.clearance_hold_counter > 0:
+                    self.clearance_hold_counter -= 1
+                    self.hover_z_ref = 1.55
+                elif self.path_blocked and ultra["down"] < cur_pos[2] - 0.35:
+                    # Wall underneath, keep holding
+                    self.hover_z_ref = 1.55
+                    self.clearance_hold_counter = 10  # Re-hold for 1 second / 10 steps
+                else:
+                    self.hover_z_ref = 1.0
+
+            # 2. Dynamic mapping & A* path replanning (only outside takeoff phase)
+            need_replan = False
+            yaw = s[9]
+            c_y, s_y = np.cos(yaw), np.sin(yaw)
+            rot_z = np.array([[c_y, -s_y, 0.0], [s_y, c_y, 0.0], [0.0, 0.0, 1.0]])
+            
+            dirs_body = {
+                "front": np.array([1.0, 0.0, 0.0]),
+                "left": np.array([0.0, 1.0, 0.0]),
+                "right": np.array([0.0, -1.0, 0.0]),
+                "rear": np.array([-1.0, 0.0, 0.0]),
+            }
+            
+            for name, d_body in dirs_body.items():
+                dist = ultra[name]
+                if dist < self.sensor_cfg.ultrasonic_max_range * 0.95:
+                    d_world = rot_z @ d_body
+                    obs_pos = cur_pos + np.array([0.0, 0.0, 0.03]) + d_world * dist
+                    
+                    gx, gy = self.planner._world_to_grid(obs_pos[0], obs_pos[1])
+                    
+                    # Inflate wall obstacle cell
+                    inflation_cells = int(self.planner.safety_margin / self.planner.resolution)
+                    for dx in range(-inflation_cells, inflation_cells + 1):
+                        for dy in range(-inflation_cells, inflation_cells + 1):
+                            ngx = gx + dx
+                            ngy = gy + dy
+                            if 0 <= ngx < self.planner.nx and 0 <= ngy < self.planner.ny:
+                                if self.mapped_grid[ngx, ngy] == 0:
+                                    self.mapped_grid[ngx, ngy] = 1
+                                    need_replan = True
+
+            # If new obstacles mapped, or first step after takeoff, replan path
+            if need_replan or self.step_count == self.takeoff_steps + 1:
+                self.global_path, success = self.planner.plan_on_grid(cur_pos[0:2], self.target[0:2], self.mapped_grid)
+                self.path_blocked = not success
+                self._draw_path()
+
+            # Get lookahead waypoint from A* path
+            target_wp_astar = self._get_lookahead_waypoint(cur_pos)
+
+            # 3. Determine target_wp (if MPC) or vel_cmd (if non-MPC), and yaw_rate_cmd
+            if self.use_mpc_layer:
+                if self.demo_guided_mode:
+                    target_wp = target_wp_astar
+                    yaw_rate_cmd = 0.0
+                    vel_cmd = np.zeros(3, dtype=np.float32)
+                else:
+                    clipped = np.clip(action, -1.0, 1.0)
+                    delta = clipped - self.smoothed_action
+                    delta = np.clip(delta, -self.action_cfg.action_rate_limit, self.action_cfg.action_rate_limit)
+                    clipped = self.smoothed_action + delta
+                    self.smoothed_action = (1.0 - self.action_cfg.action_smoothing_alpha) * self.smoothed_action + self.action_cfg.action_smoothing_alpha * clipped
+                    
+                    # Local waypoint: drone position + offset (up to 0.5m)
+                    wp_offset = self.smoothed_action[0:3] * 0.5
+                    rl_wp = cur_pos + wp_offset
+                    
+                    # Blend local waypoint and lookahead waypoint (85% lookahead, 15% local waypoint)
+                    target_wp = (1.0 - self.guidance_blend) * rl_wp + self.guidance_blend * target_wp_astar
+                    yaw_rate_cmd = self.smoothed_action[3] * self.action_cfg.yaw_rate_max
+                    
+                    # Define vel_cmd for reward calculation
+                    cur_vel = s[10:13]
+                    vel_cmd = self.mpc.compute_control(cur_pos, cur_vel, target_wp)
+            else:
+                vel_cmd, yaw_rate_cmd = self._action_to_vel_cmd(action)
+
         motor_action = np.ones((1, 4), dtype=np.float32) * self.drone_cfg.hover_rpm
 
         for _ in range(self.rl_every_n):
@@ -278,11 +486,13 @@ class HierarchicalNavEnv(gym.Env):
             self._apply_wind_disturbance()
             state, _, terminated, truncated, _ = self.env.step(motor_action)
             s = state[0]
+            self.last_state = s
 
             # Record state histories for metrics
             self.pos_history.append(np.array(s[0:3], dtype=np.float32))
             rel = self.target - s[0:3]
             self.dist_history.append(float(np.linalg.norm(rel)))
+            self.vel_history.append(np.array(s[10:13], dtype=np.float32))
 
             # Update gains every 1 second of simulation time
             if self.use_adaptive_scheduler and (self.control_step_counter % self.sim_cfg.ctrl_freq == 0):
@@ -305,29 +515,106 @@ class HierarchicalNavEnv(gym.Env):
                 self.stab_ctrl.I_COEFF_TOR = self.I_COEFF_TOR_BASE * self.gain_scale
                 self.stab_ctrl.D_COEFF_TOR = self.D_COEFF_TOR_BASE * self.gain_scale
 
-            # RL gives high-level desired velocity; DSLPID handles stabilization to motor RPM.
-            target_rpy_rates = np.array([0.0, 0.0, yaw_rate_cmd], dtype=np.float32)
-            # Diagonal guidance: move in XY while climbing (no strict L-shaped behavior).
-            rel = self.target - s[0:3]
-            dist3 = float(np.linalg.norm(rel))
-            if dist3 > 1e-6:
-                guide_dir = rel / dist3
+            # 2. Get inner step targets
+            if self.step_count <= self.takeoff_steps:
+                target_wp_astar_inner = np.array([0.0, 0.0, 1.0], dtype=np.float32)
             else:
-                guide_dir = np.zeros(3, dtype=np.float32)
+                target_wp_astar_inner = self._get_lookahead_waypoint(s[0:3])
 
-            guide_speed = min(self.action_cfg.vxy_max, max(0.12, 0.30 * dist3))
-            guide_vel = guide_dir * guide_speed
-            guide_vel[2] = float(np.clip(guide_vel[2], -self.action_cfg.vz_max, self.action_cfg.vz_max))
+            # Compute commanded velocity mixed_vel
+            if self.use_mpc_layer:
+                cur_pos_inner = s[0:3]
+                cur_vel_inner = s[10:13]
+                if not self.demo_guided_mode and self.step_count > self.takeoff_steps:
+                    rl_wp = cur_pos_inner + wp_offset
+                    target_wp_inner = (1.0 - self.guidance_blend) * rl_wp + self.guidance_blend * target_wp_astar_inner
+                else:
+                    target_wp_inner = target_wp_astar_inner
+                
+                # MPC controller computes desired velocity towards target_wp_inner
+                vel_cmd_mpc = self.mpc.compute_control(cur_pos_inner, cur_vel_inner, target_wp_inner)
+                
+                # Smooth startup ramp
+                ramp = float(np.clip(self.step_count / max(1, self.takeoff_steps), 0.10, 1.0))
+                mixed_vel = vel_cmd_mpc * ramp
+            else:
+                # Diagonal guidance: move in XY while climbing towards target_wp_astar_inner
+                if self.step_count <= self.takeoff_steps:
+                    rel_inner = target_wp_astar_inner - s[0:3]
+                    dist3 = float(np.linalg.norm(rel_inner))
+                    if dist3 > 1e-6:
+                        guide_dir = rel_inner / dist3
+                    else:
+                        guide_dir = np.zeros(3, dtype=np.float32)
+                    guide_speed = min(self.action_cfg.vz_max, max(0.05, 0.30 * dist3))
+                    guide_vel = guide_dir * guide_speed
+                else:
+                    rel_inner = target_wp_astar_inner - s[0:3]
+                    dist3 = float(np.linalg.norm(rel_inner))
+                    if dist3 > 1e-6:
+                        guide_dir = rel_inner / dist3
+                    else:
+                        guide_dir = np.zeros(3, dtype=np.float32)
 
-            # Smooth startup ramp for stable emergence from ground.
-            ramp = float(np.clip(self.step_count / max(1, self.takeoff_steps), 0.10, 1.0))
-            mixed_vel = (1.0 - self.guidance_blend) * vel_cmd + self.guidance_blend * guide_vel
-            mixed_vel *= ramp
+                    guide_speed = min(self.action_cfg.vxy_max, max(0.06, 0.20 * dist3))
+                    guide_vel = guide_dir * guide_speed
+                    guide_vel[2] = float(np.clip(guide_vel[2], -self.action_cfg.vz_max, self.action_cfg.vz_max))
+
+                # Smooth startup ramp for stable emergence from ground.
+                ramp = float(np.clip(self.step_count / max(1, self.takeoff_steps), 0.10, 1.0))
+                mixed_vel = (1.0 - self.guidance_blend) * vel_cmd + self.guidance_blend * guide_vel
+                mixed_vel *= ramp
+
+            # If climbing over a wall and not yet at safe altitude, stop horizontal motion
+            if self.hover_z_ref > 1.05 and s[2] < 1.45:
+                mixed_vel[0] = 0.0
+                mixed_vel[1] = 0.0
+
+            # Local obstacle repulsion (potential field) to prevent wall collisions
+            repulse_vel = np.zeros(3, dtype=np.float32)
+            repulse_dist = 0.14
+            k_rep = 0.35
+            
+            yaw = s[9]
+            c_y, s_y = np.cos(yaw), np.sin(yaw)
+            
+            rep_body = np.zeros(2, dtype=np.float32)
+            if ultra["front"] < repulse_dist:
+                rep_body[0] -= k_rep * (repulse_dist - ultra["front"])
+            if ultra["rear"] < repulse_dist:
+                rep_body[0] += k_rep * (repulse_dist - ultra["rear"])
+            if ultra["left"] < repulse_dist:
+                rep_body[1] -= k_rep * (repulse_dist - ultra["left"])
+            if ultra["right"] < repulse_dist:
+                rep_body[1] += k_rep * (repulse_dist - ultra["right"])
+                
+            repulse_vel[0] = rep_body[0] * c_y - rep_body[1] * s_y
+            repulse_vel[1] = rep_body[0] * s_y + rep_body[1] * c_y
+            
+            mixed_vel += repulse_vel
+            
+            # Ensure velocity limits are respected after adding repulsion
+            mixed_vel[0] = np.clip(mixed_vel[0], -self.action_cfg.vxy_max, self.action_cfg.vxy_max)
+            mixed_vel[1] = np.clip(mixed_vel[1], -self.action_cfg.vxy_max, self.action_cfg.vxy_max)
+            mixed_vel[2] = np.clip(mixed_vel[2], -self.action_cfg.vz_max, self.action_cfg.vz_max)
 
             self.nav_cmd_lpf = 0.95 * self.nav_cmd_lpf + 0.05 * mixed_vel
-            target_pos = np.array([self.target[0], self.target[1], self.hover_z_ref], dtype=np.float32)
+            
             target_vel = np.array([self.nav_cmd_lpf[0], self.nav_cmd_lpf[1], self.nav_cmd_lpf[2]], dtype=np.float32)
+            
+            # Integrate target_vel to get a smooth reference position target_pos
+            self.pos_ref = self.pos_ref + target_vel * self.ctrl_dt
+            
+            # Anti-windup reference clipping: prevent it from running too far ahead of the drone
+            diff_ref = self.pos_ref - s[0:3]
+            dist_ref = float(np.linalg.norm(diff_ref))
+            if dist_ref > 0.15:
+                self.pos_ref = s[0:3] + diff_ref * (0.15 / dist_ref)
+                
+            target_pos = np.copy(self.pos_ref)
             target_yaw = s[9]
+            target_rpy_rates = np.array([0.0, 0.0, yaw_rate_cmd], dtype=np.float32)
+            
             rpm, _, _ = self.stab_ctrl.computeControlFromState(
                 control_timestep=self.ctrl_dt,
                 state=s,
@@ -337,6 +624,18 @@ class HierarchicalNavEnv(gym.Env):
                 target_rpy_rates=target_rpy_rates,
             )
             motor_action[0, :] = np.clip(rpm, self.drone_cfg.min_rpm, self.drone_cfg.max_rpm)
+
+            # Record control step metrics
+            self.control_effort_history.append(np.sum(np.square(target_vel)))
+            
+            if self.use_mpc_layer:
+                if self.step_count <= self.takeoff_steps:
+                    wp_err = float(np.linalg.norm(s[0:3] - target_wp))
+                else:
+                    wp_err = float(np.linalg.norm(s[0:3] - target_wp_inner))
+            else:
+                wp_err = float(np.linalg.norm(s[0:3] - target_pos))
+            self.wp_error_history.append(wp_err)
 
             if np.any(terminated) or np.any(truncated):
                 break
@@ -360,14 +659,14 @@ class HierarchicalNavEnv(gym.Env):
         rates = extras["rates"]
         vel = extras["vel"]
 
-        progress_reward = 5.0 * (self.prev_dist - dist_xy)  # Encourage XY progress toward target each step.
-        target_bonus = 14.0 if dist_xy < self.task_cfg.target_threshold_m else 0.0  # Bonus for entering target area.
-        proximity_pen = -0.8 * max(0.0, 0.30 - min(ultra["front"], ultra["left"], ultra["right"], ultra["rear"]))  # Penalize getting too close to obstacles/walls.
-        tilt_pen = -0.10 * (abs(rpy[0]) + abs(rpy[1]))  # Penalize excessive roll/pitch (attitude instability).
-        rate_pen = -0.015 * np.linalg.norm(rates)  # Penalize aggressive angular rates.
-        smooth_pen = -0.03 * np.linalg.norm(self.smoothed_action - self.prev_action)  # Penalize abrupt command changes.
-        effort_pen = -0.01 * np.linalg.norm(vel_cmd)  # Penalize excessive command effort.
-        vel_stability = -0.015 * np.linalg.norm(vel)  # Penalize high translational jitter/speed.
+        progress_reward = 5.0 * (self.prev_dist - dist_xy)
+        target_bonus = 14.0 if dist_xy < self.task_cfg.target_threshold_m else 0.0
+        proximity_pen = -0.8 * max(0.0, 0.30 - min(ultra["front"], ultra["left"], ultra["right"], ultra["rear"]))
+        tilt_pen = -0.10 * (abs(rpy[0]) + abs(rpy[1]))
+        rate_pen = -0.015 * np.linalg.norm(rates)
+        smooth_pen = -0.03 * np.linalg.norm(self.smoothed_action - self.prev_action)
+        effort_pen = -0.01 * np.linalg.norm(vel_cmd)
+        vel_stability = -0.015 * np.linalg.norm(vel)
 
         reward = progress_reward + target_bonus + proximity_pen + tilt_pen + rate_pen + smooth_pen + effort_pen + vel_stability
 
@@ -389,15 +688,15 @@ class HierarchicalNavEnv(gym.Env):
 
         if fell_down:
             self.fall_counter += 1
-            reward -= 0.25  # Small ongoing penalty while fallen/colliding during grace window.
+            reward -= 0.25
         else:
             self.fall_counter = 0
 
         done = success or out_of_bounds or (self.step_count >= self.max_steps) or (self.fall_counter >= self.fall_grace_steps)
         if collision:
-            reward -= 2.0  # Event penalty for collision.
+            reward -= 2.0
         if out_of_bounds:
-            reward -= 6.0  # Strong penalty for leaving safe operating area.
+            reward -= 6.0
 
         self.prev_dist = dist_xy
         info: Dict[str, float] = {
@@ -405,7 +704,7 @@ class HierarchicalNavEnv(gym.Env):
             "distance_xy": dist_xy,
             "collision": float(collision),
             "fell_down": float(fell_down),
-            "hover_on_target_sec": float(self.hover_on_target_counter / self.sim_cfg.ctrl_freq),
+            "hover_on_target_sec": float(self.hover_on_target_counter / self.sim_cfg.rl_freq),
             "success": float(success),
             "progress_reward": progress_reward,
             "gain_scale": self.gain_scale,
@@ -461,7 +760,7 @@ class HierarchicalNavEnv(gym.Env):
                     break
 
             if settled_idx >= len(self.dist_history):
-                settling_time = float(self.max_steps * self.ctrl_dt)
+                settling_time = float(self.max_steps * (self.rl_every_n * self.ctrl_dt))
             else:
                 settling_time = float(settled_idx * self.ctrl_dt)
 
@@ -471,6 +770,22 @@ class HierarchicalNavEnv(gym.Env):
             info["overshoot_percent"] = overshoot_pct
             info["z_overshoot"] = z_overshoot
             info["settling_time"] = settling_time
+
+            # Compute new metrics
+            vels = np.array(self.vel_history)
+            if len(vels) > 2:
+                accels = np.diff(vels, axis=0) / self.ctrl_dt
+                jerks = np.diff(accels, axis=0) / self.ctrl_dt
+                smoothness = float(np.sqrt(np.mean(np.square(jerks))))
+            else:
+                smoothness = 0.0
+            info["trajectory_smoothness"] = smoothness
+
+            # 2. Control Effort
+            info["control_effort"] = float(np.mean(self.control_effort_history)) if self.control_effort_history else 0.0
+
+            # 3. Waypoint Tracking Error
+            info["waypoint_tracking_error"] = float(np.mean(self.wp_error_history)) if self.wp_error_history else 0.0
 
         return obs, float(reward), done, False, info
 

@@ -22,14 +22,21 @@ class UltrasonicArray:
         c, s = np.cos(yaw), np.sin(yaw)
         rot_z = np.array([[c, -s, 0.0], [s, c, 0.0], [0.0, 0.0, 1.0]])
 
+        offset_dist = 0.06
         out = {}
         for name, d in dirs_body.items():
             d_world = rot_z @ d if name != "down" else d
-            start = pos + np.array([0.0, 0.0, 0.03])
-            end = start + d_world * self.max_range
+            # Offset start to prevent self-collisions with the drone body
+            start = pos + np.array([0.0, 0.0, 0.03]) + d_world * offset_dist
+            end = start + d_world * (self.max_range - offset_dist)
+            
             hit = p.rayTest(start.tolist(), end.tolist(), physicsClientId=client_id)[0]
-            frac = float(hit[2]) if hit[0] != -1 else 1.0
-            dist = frac * self.max_range
+            if hit[0] != -1 and hit[0] != drone_id:
+                frac = float(hit[2])
+                dist = offset_dist + frac * (self.max_range - offset_dist)
+            else:
+                dist = self.max_range
+                
             dist += float(np.random.normal(0.0, self.noise_std))
             out[name] = float(np.clip(dist, 0.0, self.max_range))
 

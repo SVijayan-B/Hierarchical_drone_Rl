@@ -50,8 +50,8 @@ class TaskConfig:
 
 @dataclass
 class ActionConfig:
-    vxy_max: float = 0.40
-    vz_max: float = 0.22
+    vxy_max: float = 0.15
+    vz_max: float = 0.15
     yaw_rate_max: float = 1.2
     action_smoothing_alpha: float = 0.04
     action_rate_limit: float = 0.03
