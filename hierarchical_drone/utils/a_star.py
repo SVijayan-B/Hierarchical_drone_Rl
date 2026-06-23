@@ -33,9 +33,14 @@ class AStarPlanner:
         start_grid = self._world_to_grid(start[0], start[1])
         goal_grid = self._world_to_grid(goal[0], goal[1])
         
-        # Ensure start and goal are free in the grid copy
+        # Ensure start, a 3x3 footprint around start, and goal are free in the grid copy
         grid_copy = np.copy(grid)
-        grid_copy[start_grid[0], start_grid[1]] = 0
+        for dx in range(-1, 2):
+            for dy in range(-1, 2):
+                nx_c = start_grid[0] + dx
+                ny_c = start_grid[1] + dy
+                if 0 <= nx_c < self.nx and 0 <= ny_c < self.ny:
+                    grid_copy[nx_c, ny_c] = 0
         grid_copy[goal_grid[0], goal_grid[1]] = 0
         
         open_set = []

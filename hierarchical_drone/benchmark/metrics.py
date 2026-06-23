@@ -8,3 +8,4 @@ class CompareConfig:
     target_seed: int
     gui: bool
     hit_radius_m: float = 0.60
+    domain_randomization: bool = False

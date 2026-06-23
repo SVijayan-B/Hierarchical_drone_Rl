@@ -3,6 +3,7 @@ import time
 import numpy as np
 import matplotlib
 import csv
+import glob
 
 matplotlib.use("Agg")  # Safe headless execution
 import matplotlib.pyplot as plt
@@ -14,7 +15,17 @@ from hierarchical_drone.env.hierarchical_nav_env import HierarchicalNavEnv
 from hierarchical_drone.benchmark.metrics import CompareConfig
 
 
-def make_eval_env(gui=False, use_adaptive_scheduler=True, demo_guided_mode=True, use_mpc_layer=False):
+def make_eval_env(
+    gui=False,
+    use_adaptive_scheduler=True,
+    demo_guided_mode=True,
+    use_mpc_layer=False,
+    use_rl_gain_scheduler=False,
+    use_adaptive_mpc=False,
+    use_history=False,
+    domain_randomization=False,
+    telemetry_dir=None
+):
     def _thunk():
         return HierarchicalNavEnv(
             sim=SimConfig(gui=gui),
@@ -24,35 +35,101 @@ def make_eval_env(gui=False, use_adaptive_scheduler=True, demo_guided_mode=True,
             use_adaptive_scheduler=use_adaptive_scheduler,
             demo_guided_mode=demo_guided_mode,
             use_mpc_layer=use_mpc_layer,
+            use_rl_gain_scheduler=use_rl_gain_scheduler,
+            use_adaptive_mpc=use_adaptive_mpc,
+            use_history=use_history,
+            domain_randomization=domain_randomization,
+            telemetry_dir=telemetry_dir
         )
 
     return _thunk
 
 
-def run_compare(model_path, vecnorm_path, cfg: CompareConfig):
+def run_compare(model_path, vecnorm_path, cfg: CompareConfig, trans_model_path=None, trans_vecnorm_path=None):
     timestamp = time.strftime("%Y%m%d_%H%M%S")
     out_dir = os.path.join("results", f"metrics_plots_{timestamp}")
     os.makedirs(out_dir, exist_ok=True)
 
-    print("=" * 60)
-    print("STARTING 5-WAY HIERARCHICAL DRONE COMPARISON")
-    print(f"Rounds: {cfg.rounds}, Seed base: {cfg.target_seed}, Model: {model_path}")
-    print("=" * 60)
+    print("=" * 70)
+    print("STARTING 7-WAY HIERARCHICAL DRONE STACK COMPARISON WITH HONORS METRICS")
+    print(f"Rounds: {cfg.rounds}, Seed base: {cfg.target_seed}")
+    print(f"MLP Model: {model_path}")
+    print("=" * 70)
 
-    model = PPO.load(model_path)
+    # 1. Load PPO MLP Model
+    model_mlp = PPO.load(model_path)
+    model_trans = None
 
-    # We will collect metrics for five configurations
+    # 2. Auto-detect or load PPO Transformer Model
+    if trans_model_path and os.path.exists(trans_model_path):
+        print(f"Loading specified Transformer PPO model: {trans_model_path}")
+        model_trans = PPO.load(trans_model_path)
+    else:
+        # Search results_hierarchical for a run with "trans"
+        trans_runs = glob.glob(os.path.join("results_hierarchical", "*trans*"))
+        if trans_runs:
+            trans_runs.sort()
+            latest_run = trans_runs[-1]
+            best_model = os.path.join(latest_run, "best", "best_model.zip")
+            final_model = os.path.join(latest_run, "final_model.zip")
+            chosen_model = best_model if os.path.exists(best_model) else final_model
+            if os.path.exists(chosen_model):
+                print(f"Auto-detected Transformer PPO model: {chosen_model}")
+                model_trans = PPO.load(chosen_model)
+                if not trans_vecnorm_path:
+                    trans_vecnorm_path = os.path.join(latest_run, "vecnormalize.pkl")
+            else:
+                print("Warning: No pre-trained Transformer model file found in latest run. Falling back to MLP policy.")
+                model_trans = model_mlp
+        else:
+            print("Warning: No Transformer PPO runs found. Falling back to MLP policy.")
+            model_trans = model_mlp
+
+    if not trans_vecnorm_path or not os.path.exists(trans_vecnorm_path):
+        trans_vecnorm_path = vecnorm_path
+
+    # Auto-detect PPO Gain Scheduler weights
+    scheduler_pt_path = None
+    if trans_model_path:
+        d = os.path.dirname(trans_model_path)
+        for p in [os.path.join(d, "scheduler_best.pt"), os.path.join(d, "scheduler_final.pt"), os.path.join(os.path.dirname(d), "scheduler_final.pt")]:
+            if os.path.exists(p):
+                scheduler_pt_path = p
+                break
+    if not scheduler_pt_path:
+        trans_runs = glob.glob(os.path.join("results_hierarchical", "*trans*"))
+        if trans_runs:
+            trans_runs.sort()
+            for latest_run in reversed(trans_runs):
+                for p in [
+                    os.path.join(latest_run, "best", "scheduler_best.pt"),
+                    os.path.join(latest_run, "scheduler_final.pt"),
+                ]:
+                    if os.path.exists(p):
+                        scheduler_pt_path = p
+                        break
+                if scheduler_pt_path:
+                    break
+
+    if scheduler_pt_path:
+        print(f"Loaded PPO Gain Scheduler weights: {scheduler_pt_path}")
+    else:
+        print("Warning: PPO Gain Scheduler weights not found. Using randomly initialized weights.")
+
+    # Define the 7 configurations
+    # (key, use_scheduler, demo_guided, use_mpc, use_rl_gain, use_adaptive_mpc, use_history, display_name, is_transformer)
     configs = [
-        # (name, use_scheduler, demo_guided_mode, use_mpc, display_name)
-        ("pid_only", False, True, False, "PID-Only"),
-        ("rl_baseline", False, False, False, "RL + PID Baseline"),
-        ("rl_adaptive", True, False, False, "RL + PID Adaptive"),
-        ("rl_mpc_baseline", False, False, True, "RL + MPC + PID Baseline"),
-        ("rl_mpc_adaptive", True, False, True, "RL + MPC + PID Adaptive"),
+        ("pid_only", False, True, False, False, False, False, "PID-Only", False),
+        ("rl_baseline", False, False, False, False, False, False, "PPO MLP + PID", False),
+        ("rl_adaptive", True, False, False, False, False, False, "PPO MLP + Adaptive PID", False),
+        ("rl_mpc_baseline", False, False, True, False, False, False, "PPO MLP + MPC + PID", False),
+        ("rl_mpc_adaptive", True, False, True, False, False, False, "PPO MLP + MPC + Adaptive PID", False),
+        ("trans_mpc_adaptive", True, False, True, False, False, True, "Transformer PPO + MPC + Adaptive PID", True),
+        ("trans_mpc_rl_scheduler", False, False, True, True, True, True, "Transformer PPO + Adaptive MPC + RL Gain Scheduler", True),
     ]
 
     runs_data = {}
-    for key, _, _, _, disp in configs:
+    for key, _, _, _, _, _, _, disp, _ in configs:
         runs_data[key] = {
             "rewards": [],
             "success_rate": [],
@@ -63,26 +140,61 @@ def run_compare(model_path, vecnorm_path, cfg: CompareConfig):
             "smoothness": [],
             "control_effort": [],
             "wp_error": [],
+            "total_energy": [],
+            "distance_traveled": [],
+            "reward_per_joule": [],
+            # New metrics:
+            "peak_jerk": [],
+            "avg_jerk": [],
+            "oscillation_index": [],
+            "energy_per_meter": [],
+            "gain_pos_var": [],
+            "gain_att_var": [],
+            "mpc_h10_pct": [],
+            "mpc_h20_pct": [],
+            "mpc_h30_pct": [],
         }
 
-    # For plotting a single comparison run:
+    # For plotting a single comparison run over time:
     dist_histories = {}
     gain_histories = {}
     time_histories = {}
 
-    for key, use_scheduler, demo_mode, use_mpc, disp in configs:
+    for key, use_scheduler, demo_mode, use_mpc, use_rl_gain, use_adaptive_mpc, use_history, disp, is_trans in configs:
         print(f"\nEvaluating configuration: {disp}")
 
-        # Create environment
-        raw_env_fn = make_eval_env(gui=cfg.gui, use_adaptive_scheduler=use_scheduler, demo_guided_mode=demo_mode, use_mpc_layer=use_mpc)
+        # Choose model and vecnorm
+        active_model = model_trans if is_trans else model_mlp
+        active_vecnorm = trans_vecnorm_path if is_trans else vecnorm_path
+
+        # Create evaluation environment
+        domain_rand_enabled = getattr(cfg, "domain_randomization", False)
+        raw_env_fn = make_eval_env(
+            gui=cfg.gui,
+            use_adaptive_scheduler=use_scheduler,
+            demo_guided_mode=demo_mode,
+            use_mpc_layer=use_mpc,
+            use_rl_gain_scheduler=use_rl_gain,
+            use_adaptive_mpc=use_adaptive_mpc,
+            use_history=use_history,
+            domain_randomization=domain_rand_enabled,
+            telemetry_dir=out_dir
+        )
+
         vec_env = DummyVecEnv([raw_env_fn])
-        vec_env = VecNormalize.load(vecnorm_path, vec_env)
+        vec_env = VecNormalize.load(active_vecnorm, vec_env)
         vec_env.training = False
         vec_env.norm_reward = False
+        vec_env.envs[0].evaluation_mode = True
+
+        if use_rl_gain and scheduler_pt_path:
+            vec_env.envs[0].rl_gain_scheduler.load(scheduler_pt_path)
 
         for r in range(cfg.rounds):
             seed = cfg.target_seed + r
             obs = vec_env.reset()
+            # Set telemetry run metadata on raw environment
+            vec_env.envs[0].set_telemetry_run_info(run_name=timestamp, config_name=key, round_idx=r+1)
 
             done = False
             ep_reward = 0.0
@@ -91,7 +203,7 @@ def run_compare(model_path, vecnorm_path, cfg: CompareConfig):
             gain_hist = []
 
             while not done:
-                action, _ = model.predict(obs, deterministic=True)
+                action, _ = active_model.predict(obs, deterministic=True)
                 obs, reward, dones, infos = vec_env.step(action)
                 ep_reward += float(reward[0])
                 done = bool(dones[0])
@@ -112,6 +224,20 @@ def run_compare(model_path, vecnorm_path, cfg: CompareConfig):
             smoothness = info.get("trajectory_smoothness", 0.0)
             control_effort = info.get("control_effort", 0.0)
             wp_error = info.get("waypoint_tracking_error", 0.0)
+            tot_energy = info.get("total_energy", 0.0)
+            dist_trav = info.get("distance_traveled", 0.0)
+            r_per_j = info.get("reward_per_joule", 0.0)
+
+            # New metrics
+            peak_jerk = info.get("peak_jerk", 0.0)
+            avg_jerk = info.get("avg_jerk", 0.0)
+            oscillation_index = info.get("oscillation_index", 0.0)
+            energy_per_meter = tot_energy / max(1e-6, dist_trav)
+            gain_pos_var = info.get("gain_pos_var", 0.0)
+            gain_att_var = info.get("gain_att_var", 0.0)
+            mpc_h10 = info.get("mpc_h10_pct", 0.0)
+            mpc_h20 = info.get("mpc_h20_pct", 0.0)
+            mpc_h30 = info.get("mpc_h30_pct", 0.0)
 
             runs_data[key]["rewards"].append(ep_reward)
             runs_data[key]["success_rate"].append(success)
@@ -122,11 +248,26 @@ def run_compare(model_path, vecnorm_path, cfg: CompareConfig):
             runs_data[key]["smoothness"].append(smoothness)
             runs_data[key]["control_effort"].append(control_effort)
             runs_data[key]["wp_error"].append(wp_error)
+            runs_data[key]["total_energy"].append(tot_energy)
+            runs_data[key]["distance_traveled"].append(dist_trav)
+            runs_data[key]["reward_per_joule"].append(r_per_j)
+
+            # New metrics append
+            runs_data[key]["peak_jerk"].append(peak_jerk)
+            runs_data[key]["avg_jerk"].append(avg_jerk)
+            runs_data[key]["oscillation_index"].append(oscillation_index)
+            runs_data[key]["energy_per_meter"].append(energy_per_meter)
+            runs_data[key]["gain_pos_var"].append(gain_pos_var)
+            runs_data[key]["gain_att_var"].append(gain_att_var)
+            runs_data[key]["mpc_h10_pct"].append(mpc_h10)
+            runs_data[key]["mpc_h20_pct"].append(mpc_h20)
+            runs_data[key]["mpc_h30_pct"].append(mpc_h30)
 
             print(
                 f"Round {r+1}/{cfg.rounds}: Reward={ep_reward:.2f}, Success={success}, Tracking Error={mean_err:.3f}m, "
-                f"Smoothness={smoothness:.1f}, Effort={control_effort:.4f}, WP Err={wp_error:.3f}m"
+                f"Smoothness={smoothness:.1f}, Energy={tot_energy:.1f}, Avg Jerk={avg_jerk:.1f}, Osc={oscillation_index:.2f}"
             )
+
 
             if r == 0:
                 dist_histories[key] = dist_hist
@@ -140,11 +281,22 @@ def run_compare(model_path, vecnorm_path, cfg: CompareConfig):
     with open(csv_path, "w", newline="") as f:
         writer = csv.writer(f)
         writer.writerow([
-            "Configuration", "Round", "Reward", "Success", "Mean_Tracking_Error_m", "RMSE_Tracking_Error_m", "Overshoot_m", "Settling_Time_s", "Trajectory_Smoothness", "Control_Effort", "Waypoint_Tracking_Error"
+            "Configuration", "Round", "Reward", "Success", "Mean_Tracking_Error_m", "RMSE_Tracking_Error_m", 
+            "Overshoot_m", "Settling_Time_s", "Trajectory_Smoothness", "Control_Effort", 
+            "Waypoint_Tracking_Error", "Total_Energy", "Distance_Traveled_m", "Reward_per_Joule",
+            "Peak_Jerk", "Average_Jerk", "Oscillation_Index", "Energy_per_Meter",
+            "Gain_Pos_Var", "Gain_Att_Var", "MPC_H10_Pct", "MPC_H20_Pct", "MPC_H30_Pct",
+            "Robustness_Score", "Sim_to_Real_Readiness"
         ])
 
-        for key, _, _, _, disp in configs:
-            # Write individual rounds
+        for key, _, _, _, _, _, _, disp, _ in configs:
+            m_succ = np.mean(runs_data[key]["success_rate"])
+            m_err = np.mean(runs_data[key]["mean_err"])
+            m_jerk = np.mean(runs_data[key]["avg_jerk"])
+            m_en_m = np.mean(runs_data[key]["energy_per_meter"])
+            rob = m_succ * np.exp(-m_err / 0.5)
+            sim_to_real = 0.3 * (m_succ * 100) + 0.2 * max(0.0, 100 - m_jerk * 5) + 0.2 * max(0.0, 100 - m_en_m * 10) + 0.3 * (rob * 100)
+
             for r in range(cfg.rounds):
                 writer.writerow([
                     disp,
@@ -158,43 +310,80 @@ def run_compare(model_path, vecnorm_path, cfg: CompareConfig):
                     f"{runs_data[key]['smoothness'][r]:.2f}",
                     f"{runs_data[key]['control_effort'][r]:.6f}",
                     f"{runs_data[key]['wp_error'][r]:.4f}",
+                    f"{runs_data[key]['total_energy'][r]:.2f}",
+                    f"{runs_data[key]['distance_traveled'][r]:.4f}",
+                    f"{runs_data[key]['reward_per_joule'][r]:.6f}",
+                    # New metrics per round
+                    f"{runs_data[key]['peak_jerk'][r]:.2f}",
+                    f"{runs_data[key]['avg_jerk'][r]:.2f}",
+                    f"{runs_data[key]['oscillation_index'][r]:.2f}",
+                    f"{runs_data[key]['energy_per_meter'][r]:.4f}",
+                    f"{runs_data[key]['gain_pos_var'][r]:.6f}",
+                    f"{runs_data[key]['gain_att_var'][r]:.6f}",
+                    f"{runs_data[key]['mpc_h10_pct'][r]:.1f}",
+                    f"{runs_data[key]['mpc_h20_pct'][r]:.1f}",
+                    f"{runs_data[key]['mpc_h30_pct'][r]:.1f}",
+                    "-",
+                    "-"
                 ])
-            # Write averages
             writer.writerow([
                 disp,
                 "Average",
                 f"{np.mean(runs_data[key]['rewards']):.2f}",
-                f"{np.mean(runs_data[key]['success_rate']):.1%}",
-                f"{np.mean(runs_data[key]['mean_err']):.4f}",
+                f"{m_succ:.1%}",
+                f"{m_err:.4f}",
                 f"{np.mean(runs_data[key]['rmse_err']):.4f}",
                 f"{np.mean(runs_data[key]['overshoot']):.4f}",
                 f"{np.mean(runs_data[key]['settling_time']):.2f}",
                 f"{np.mean(runs_data[key]['smoothness']):.2f}",
                 f"{np.mean(runs_data[key]['control_effort']):.6f}",
                 f"{np.mean(runs_data[key]['wp_error']):.4f}",
+                f"{np.mean(runs_data[key]['total_energy']):.2f}",
+                f"{np.mean(runs_data[key]['distance_traveled']):.4f}",
+                f"{np.mean(runs_data[key]['reward_per_joule']):.6f}",
+                # New metrics averages
+                f"{np.mean(runs_data[key]['peak_jerk']):.2f}",
+                f"{m_jerk:.2f}",
+                f"{np.mean(runs_data[key]['oscillation_index']):.2f}",
+                f"{m_en_m:.4f}",
+                f"{np.mean(runs_data[key]['gain_pos_var']):.6f}",
+                f"{np.mean(runs_data[key]['gain_att_var']):.6f}",
+                f"{np.mean(runs_data[key]['mpc_h10_pct']):.1f}",
+                f"{np.mean(runs_data[key]['mpc_h20_pct']):.1f}",
+                f"{np.mean(runs_data[key]['mpc_h30_pct']):.1f}",
+                f"{rob:.4f}",
+                f"{sim_to_real:.2f}"
             ])
-            # Blank line spacer
             writer.writerow([])
 
     print(f"\nCSV results written to {csv_path}")
 
-    # Process and print summaries
+    # Process and print summaries to text report
     summary_path = os.path.join(out_dir, "comparison_summary.txt")
     with open(summary_path, "w") as f:
-
         def write_and_print(text):
             print(text)
             f.write(text + "\n")
 
-        write_and_print("=" * 115)
-        write_and_print("                               5-WAY DRONE PERFORMANCE COMPARISON REPORT")
-        write_and_print("=" * 115)
-        write_and_print(f"Model: {model_path}")
+        write_and_print("=" * 180)
+        write_and_print("                                                      7-WAY DRONE PERFORMANCE COMPARISON REPORT (HONORS EDITION)")
+        write_and_print("=" * 180)
         write_and_print(f"Evaluated over {cfg.rounds} rounds with matched seeds.")
-        write_and_print("-" * 115)
-        write_and_print(f"{'Metric':<28} | {'PID-Only':<12} | {'RL Baseline':<12} | {'RL Adaptive':<12} | {'RL+MPC Base':<12} | {'RL+MPC Adap':<12}")
-        write_and_print("-" * 115)
+        write_and_print(f"Domain Randomization: {domain_rand_enabled}")
+        write_and_print("-" * 180)
+        write_and_print(
+            f"{'Metric':<32} | "
+            f"{'PID-Only':<12} | "
+            f"{'PPO MLP':<12} | "
+            f"{'PPO MLP+A':<12} | "
+            f"{'MLP+MPC':<12} | "
+            f"{'MLP+M+A':<12} | "
+            f"{'Trans+M+A':<12} | "
+            f"{'Trans+AM+RL':<12}"
+        )
+        write_and_print("-" * 180)
 
+        # Standard metrics
         metrics_to_print = [
             ("Success Rate", "success_rate", "{:.1%}"),
             ("Average Reward", "rewards", "{:.2f}"),
@@ -205,92 +394,168 @@ def run_compare(model_path, vecnorm_path, cfg: CompareConfig):
             ("Trajectory Smoothness", "smoothness", "{:.2f}"),
             ("Control Effort", "control_effort", "{:.6f}"),
             ("Waypoint Tracking Error (m)", "wp_error", "{:.4f}"),
+            ("Total Energy (x10^4 RPM^2)", "total_energy", "{:.1f}"),
+            ("Distance Traveled (m)", "distance_traveled", "{:.4f}"),
+            ("Reward per Joule", "reward_per_joule", "{:.6f}"),
+            # Honors metrics
+            ("Peak Jerk (m/s^3)", "peak_jerk", "{:.2f}"),
+            ("Average Jerk (m/s^3)", "avg_jerk", "{:.2f}"),
+            ("Oscillation Index", "oscillation_index", "{:.2f}"),
+            ("Energy per Meter", "energy_per_meter", "{:.4f}"),
+            ("Gain Pos Variance", "gain_pos_var", "{:.6f}"),
+            ("Gain Att Variance", "gain_att_var", "{:.6f}"),
+            ("MPC Horizon 10 Usage (%)", "mpc_h10_pct", "{:.1f}%"),
+            ("MPC Horizon 20 Usage (%)", "mpc_h20_pct", "{:.1f}%"),
+            ("MPC Horizon 30 Usage (%)", "mpc_h30_pct", "{:.1f}%"),
         ]
 
         for name, key, fmt in metrics_to_print:
-            pid_val = np.mean(runs_data["pid_only"][key])
-            base_val = np.mean(runs_data["rl_baseline"][key])
-            adap_val = np.mean(runs_data["rl_adaptive"][key])
-            mpc_base_val = np.mean(runs_data["rl_mpc_baseline"][key])
-            mpc_adap_val = np.mean(runs_data["rl_mpc_adaptive"][key])
+            vals = [np.mean(runs_data[c[0]][key]) for c in configs]
+            vals_str = [fmt.format(v) for v in vals]
+            write_and_print(
+                f"{name:<32} | "
+                f"{vals_str[0]:<12} | "
+                f"{vals_str[1]:<12} | "
+                f"{vals_str[2]:<12} | "
+                f"{vals_str[3]:<12} | "
+                f"{vals_str[4]:<12} | "
+                f"{vals_str[5]:<12} | "
+                f"{vals_str[6]:<12}"
+            )
+        
+        # Robustness & Sim-to-Real scores
+        rob_scores = []
+        s2r_scores = []
+        for c in configs:
+            m_succ = np.mean(runs_data[c[0]]["success_rate"])
+            m_err = np.mean(runs_data[c[0]]["mean_err"])
+            m_jerk = np.mean(runs_data[c[0]]["avg_jerk"])
+            m_en_m = np.mean(runs_data[c[0]]["energy_per_meter"])
+            rob = m_succ * np.exp(-m_err / 0.5)
+            s2r = 0.3 * (m_succ * 100) + 0.2 * max(0.0, 100 - m_jerk * 5) + 0.2 * max(0.0, 100 - m_en_m * 10) + 0.3 * (rob * 100)
+            rob_scores.append(rob)
+            s2r_scores.append(s2r)
 
-            pid_str = fmt.format(pid_val)
-            base_str = fmt.format(base_val)
-            adap_str = fmt.format(adap_val)
-            mpc_base_str = fmt.format(mpc_base_val)
-            mpc_adap_str = fmt.format(mpc_adap_val)
-
-            write_and_print(f"{name:<28} | {pid_str:<12} | {base_str:<12} | {adap_str:<12} | {mpc_base_str:<12} | {mpc_adap_str:<12}")
-
-        write_and_print("=" * 115)
+        write_and_print(
+            f"{'Robustness Score':<32} | "
+            f"{rob_scores[0]:.4f}         | "
+            f"{rob_scores[1]:.4f}         | "
+            f"{rob_scores[2]:.4f}         | "
+            f"{rob_scores[3]:.4f}         | "
+            f"{rob_scores[4]:.4f}         | "
+            f"{rob_scores[5]:.4f}         | "
+            f"{rob_scores[6]:.4f}"
+        )
+        write_and_print(
+            f"{'Sim-to-Real Readiness Score':<32} | "
+            f"{s2r_scores[0]:.2f}         | "
+            f"{s2r_scores[1]:.2f}         | "
+            f"{s2r_scores[2]:.2f}         | "
+            f"{s2r_scores[3]:.2f}         | "
+            f"{s2r_scores[4]:.2f}         | "
+            f"{s2r_scores[5]:.2f}         | "
+            f"{s2r_scores[6]:.2f}"
+        )
+        write_and_print("=" * 180)
 
     print(f"Summary report written to {summary_path}")
 
-    # Plotting
     # Plot 1: Target Distance over time comparison for round 0
-    plt.figure(figsize=(10, 5))
-    if "pid_only" in dist_histories:
-        plt.plot(time_histories["pid_only"][: len(dist_histories["pid_only"])], dist_histories["pid_only"], "k:", label="PID-Only (No RL)")
-    if "rl_baseline" in dist_histories:
-        plt.plot(time_histories["rl_baseline"][: len(dist_histories["rl_baseline"])], dist_histories["rl_baseline"], "r--", label="RL + PID Baseline")
-    if "rl_adaptive" in dist_histories:
-        plt.plot(time_histories["rl_adaptive"][: len(dist_histories["rl_adaptive"])], dist_histories["rl_adaptive"], "b-", label="RL + PID Adaptive")
-    if "rl_mpc_baseline" in dist_histories:
-        plt.plot(time_histories["rl_mpc_baseline"][: len(dist_histories["rl_mpc_baseline"])], dist_histories["rl_mpc_baseline"], "m-.", label="RL + MPC + PID Baseline")
-    if "rl_mpc_adaptive" in dist_histories:
-        plt.plot(time_histories["rl_mpc_adaptive"][: len(dist_histories["rl_mpc_adaptive"])], dist_histories["rl_mpc_adaptive"], "g-", label="RL + MPC + PID Adaptive")
-    plt.axhline(y=0.60, color="g", linestyle="-.", label="Target Threshold (0.60m)")
+    plt.figure(figsize=(11, 6))
+    colors = ['#7f7f7f', '#1f77b4', '#aec7e8', '#ff7f0e', '#ffbb78', '#2ca02c', '#d62728']
+    linestyles = [':', '--', '-.', '-', '-', '-', '-']
+    for idx, (key, _, _, _, _, _, _, disp, _) in enumerate(configs):
+        if key in dist_histories:
+            plt.plot(
+                time_histories[key][: len(dist_histories[key])],
+                dist_histories[key],
+                color=colors[idx],
+                linestyle=linestyles[idx],
+                label=disp
+            )
+    plt.axhline(y=0.60, color="k", linestyle="-.", alpha=0.5, label="Target Threshold (0.60m)")
     plt.xlabel("Simulation Time (s)")
     plt.ylabel("Distance to Target (m)")
     plt.title("Target Distance Tracking over Time (Round 1 Comparison)")
     plt.grid(True)
-    plt.legend()
+    plt.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
     plt.tight_layout()
-    plt.savefig(os.path.join(out_dir, "tracking_comparison.png"))
+    plt.savefig(os.path.join(out_dir, "tracking_comparison.png"), bbox_inches="tight")
     plt.close()
 
     # Plot 2: Gain Scale over time for round 0
-    plt.figure(figsize=(10, 4))
+    plt.figure(figsize=(11, 5))
     if "rl_adaptive" in gain_histories:
-        plt.plot(time_histories["rl_adaptive"][: len(gain_histories["rl_adaptive"])], gain_histories["rl_adaptive"], "b--", label="RL + PID Adaptive")
+        plt.plot(time_histories["rl_adaptive"][: len(gain_histories["rl_adaptive"])], gain_histories["rl_adaptive"], "b--", label="PPO MLP + Adaptive PID")
     if "rl_mpc_adaptive" in gain_histories:
-        plt.plot(time_histories["rl_mpc_adaptive"][: len(gain_histories["rl_mpc_adaptive"])], gain_histories["rl_mpc_adaptive"], "g-", label="RL + MPC + PID Adaptive")
+        plt.plot(time_histories["rl_mpc_adaptive"][: len(gain_histories["rl_mpc_adaptive"])], gain_histories["rl_mpc_adaptive"], "m-.", label="PPO MLP + MPC + Adaptive PID")
+    if "trans_mpc_rl_scheduler" in gain_histories:
+        gh = np.array(gain_histories["trans_mpc_rl_scheduler"])
+        if len(gh.shape) > 1:
+            plt.plot(time_histories["trans_mpc_rl_scheduler"][: len(gh)], gh[:, 0], "r-", label="RL Gain Scheduler (Pos)")
+            plt.plot(time_histories["trans_mpc_rl_scheduler"][: len(gh)], gh[:, 1], "g-", label="RL Gain Scheduler (Att)")
+        else:
+            plt.plot(time_histories["trans_mpc_rl_scheduler"][: len(gh)], gh, "r-", label="RL Gain Scheduler (Avg)")
     plt.xlabel("Simulation Time (s)")
     plt.ylabel("Gain Scale (multiplier)")
-    plt.title("Adaptive PID Gain Scale Modulation (Round 1)")
-    plt.axhline(y=1.0, color="r", linestyle="--", label="Baseline (1.0)")
+    plt.title("PID Gain Scale Modulation over Time (Round 1)")
+    plt.axhline(y=1.0, color="k", linestyle="--", alpha=0.5, label="Baseline (1.0)")
     plt.grid(True)
-    plt.legend()
+    plt.legend(bbox_to_anchor=(1.04, 1), loc="upper left")
     plt.tight_layout()
-    plt.savefig(os.path.join(out_dir, "gain_scale_history.png"))
+    plt.savefig(os.path.join(out_dir, "gain_scale_history.png"), bbox_inches="tight")
     plt.close()
 
-    # Plot 3: Unified bar charts in a 2x3 grid
-    fig, axes = plt.subplots(2, 3, figsize=(18, 11))
+    # Plot 3: Unified bar charts in a 4x3 grid
+    fig, axes = plt.subplots(4, 3, figsize=(18, 20))
+    axes = axes.flatten()
 
-    categories = ["PID-Only", "RL Baseline", "RL Adaptive", "RL+MPC Base", "RL+MPC Adap"]
-    colors = ["grey", "red", "blue", "magenta", "green"]
+    short_categories = ["PID", "PPO", "PPO+A", "MLP+MPC", "MLP+M+A", "Trans+M+A", "Trans+AM+RL"]
+    
+    metrics_to_plot = [
+        ("mean_err", "Mean Tracking Error", "Error (m)"),
+        ("rmse_err", "RMSE Tracking Error", "Error (m)"),
+        ("settling_time", "Average Settling Time", "Time (s)"),
+        ("rewards", "Average Episode Reward", "Reward"),
+        ("smoothness", "Trajectory Smoothness (Jerk)", "Smoothness"),
+        ("control_effort", "Control Effort (CMD Vel^2)", "Effort"),
+        ("total_energy", "Total Energy Consumed", "Energy"),
+        ("distance_traveled", "Distance Traveled", "Distance (m)"),
+        ("reward_per_joule", "Reward per Joule", "Reward/Joule"),
+        ("peak_jerk", "Peak Jerk", "Jerk (m/s^3)"),
+        ("oscillation_index", "Gain Oscillation Index", "Oscillation"),
+        ("sim_to_real", "Sim-to-Real Readiness", "Readiness Score")
+    ]
 
-    def plot_bar(ax, metric_key, title, ylabel):
-        vals = [np.mean(runs_data[k][metric_key]) for k in ["pid_only", "rl_baseline", "rl_adaptive", "rl_mpc_baseline", "rl_mpc_adaptive"]]
-        ax.bar(categories, vals, color=colors, width=0.4)
+    for idx, (metric_key, title, ylabel) in enumerate(metrics_to_plot):
+        ax = axes[idx]
+        if metric_key == "sim_to_real":
+            vals = s2r_scores
+        else:
+            vals = [np.mean(runs_data[c[0]][metric_key]) for c in configs]
+        ax.bar(short_categories, vals, color=colors, width=0.5)
         ax.set_ylabel(ylabel)
-        ax.set_title(title)
+        ax.set_title(title, fontsize=12, fontweight="bold")
         ax.grid(axis="y")
-        ax.tick_params(axis="x", labelrotation=15)
+        ax.tick_params(axis="x", labelrotation=25, labelsize=9)
 
-    plot_bar(axes[0, 0], "mean_err", "Mean Tracking Error", "Error (m)")
-    plot_bar(axes[0, 1], "settling_time", "Average Settling Time", "Time (s)")
-    plot_bar(axes[0, 2], "rewards", "Average Episode Reward", "Reward")
-    plot_bar(axes[1, 0], "smoothness", "Trajectory Smoothness (RMS Jerk)", "Smoothness (lower is better)")
-    plot_bar(axes[1, 1], "control_effort", "Control Effort", "Effort (lower is better)")
-    plot_bar(axes[1, 2], "wp_error", "Waypoint Tracking Error", "Error (m)")
-
-    plt.suptitle("Performance Metrics Unified Comparison (5-Way)", fontsize=16)
-    plt.tight_layout(rect=[0, 0.03, 1, 0.95])
+    plt.suptitle("7-Way UAV Control Stack Upgrade - Unified Benchmarks", fontsize=18, fontweight="bold", y=0.98)
+    plt.tight_layout(rect=[0, 0.02, 1, 0.96])
     plt.savefig(os.path.join(out_dir, "metrics_comparison.png"))
     plt.close()
 
     print(
         f"Unified charts saved to {out_dir}/tracking_comparison.png, {out_dir}/gain_scale_history.png, and {out_dir}/metrics_comparison.png"
     )
+    
+    # Save the output directories to artifacts for display if required
+    artifact_dir = "C:/Users/B Siddarth Vijayan/.gemini/antigravity-ide/brain/6ba40026-340c-4d66-a309-f317a44573a5"
+    if os.path.exists(artifact_dir):
+        import shutil
+        try:
+            shutil.copy(os.path.join(out_dir, "tracking_comparison.png"), os.path.join(artifact_dir, "tracking_comparison.png"))
+            shutil.copy(os.path.join(out_dir, "gain_scale_history.png"), os.path.join(artifact_dir, "gain_scale_history.png"))
+            shutil.copy(os.path.join(out_dir, "metrics_comparison.png"), os.path.join(artifact_dir, "metrics_comparison.png"))
+            print(f"Copied plots to artifacts directory: {artifact_dir}")
+        except Exception as e:
+            print(f"Could not copy files to artifact directory: {e}")

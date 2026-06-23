@@ -6,7 +6,7 @@ class SimConfig:
     pyb_freq: int = 240
     ctrl_freq: int = 120
     rl_freq: int = 10
-    episode_sec: int = 40
+    episode_sec: int = 60
     gui: bool = False
     obstacles: bool = False
     # Wind disturbance amplitude in Newtons along world axes [x, y, z].
@@ -50,8 +50,8 @@ class TaskConfig:
 
 @dataclass
 class ActionConfig:
-    vxy_max: float = 0.15
-    vz_max: float = 0.15
+    vxy_max: float = 0.08
+    vz_max: float = 0.08
     yaw_rate_max: float = 1.2
     action_smoothing_alpha: float = 0.04
     action_rate_limit: float = 0.03

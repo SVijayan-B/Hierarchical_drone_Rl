@@ -14,13 +14,14 @@ from hierarchical_drone.config.settings import ActionConfig, SensorConfig, SimCo
 from hierarchical_drone.env.hierarchical_nav_env import HierarchicalNavEnv
 
 
-def make_eval_env(gui=True):
+def make_eval_env(gui=True, telemetry_dir=None):
     def _thunk():
         return HierarchicalNavEnv(
             sim=SimConfig(gui=gui),
             task=TaskConfig(),
             sensor_cfg=SensorConfig(),
             action_cfg=ActionConfig(),
+            telemetry_dir=telemetry_dir
         )
 
     return _thunk
@@ -31,7 +32,7 @@ def evaluate(model_path, vecnorm_path, episodes=5, gui=True):
     out_dir = os.path.join("results", f"metrics_plots_{timestamp}")
     os.makedirs(out_dir, exist_ok=True)
 
-    vec_env = DummyVecEnv([make_eval_env(gui=gui)])
+    vec_env = DummyVecEnv([make_eval_env(gui=gui, telemetry_dir=out_dir)])
     vec_env = VecNormalize.load(vecnorm_path, vec_env)
     vec_env.training = False
     vec_env.norm_reward = False
@@ -42,6 +43,7 @@ def evaluate(model_path, vecnorm_path, episodes=5, gui=True):
 
     for ep in range(episodes):
         obs = vec_env.reset()
+        vec_env.envs[0].set_telemetry_run_info(run_name=timestamp, config_name="evaluation", round_idx=ep+1)
         done = False
         ep_reward = 0.0
         hit_target = False

@@ -9,7 +9,9 @@ class UltrasonicArray:
         self.max_range = max_range
         self.noise_std = noise_std
 
-    def read(self, drone_id, pos, rpy, client_id):
+    def read(self, drone_id, pos, rpy, client_id, ignore_ids=None):
+        if ignore_ids is None:
+            ignore_ids = []
         yaw = rpy[2]
         dirs_body = {
             "front": np.array([1.0, 0.0, 0.0]),
@@ -31,7 +33,7 @@ class UltrasonicArray:
             end = start + d_world * (self.max_range - offset_dist)
             
             hit = p.rayTest(start.tolist(), end.tolist(), physicsClientId=client_id)[0]
-            if hit[0] != -1 and hit[0] != drone_id:
+            if hit[0] != -1 and hit[0] != drone_id and hit[0] not in ignore_ids:
                 frac = float(hit[2])
                 dist = offset_dist + frac * (self.max_range - offset_dist)
             else:

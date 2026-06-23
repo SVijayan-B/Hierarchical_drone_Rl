@@ -2,11 +2,14 @@ import numpy as np
 
 
 class MPCController:
-    """Model Predictive Controller for 3D trajectory tracking with velocity and acceleration constraints."""
+    """Model Predictive Controller for 3D trajectory tracking with velocity and acceleration constraints.
+    
+    Upgraded to support Adaptive MPC with dynamic horizons (10, 20, 30) and adaptive cost weights.
+    """
 
     def __init__(self, horizon: int = 20, dt: float = 0.1):
-        self.N = horizon
         self.dt = dt
+        self.N = horizon  # default nominal horizon
 
         # State-space formulation:
         # State z = [x, y, z, vx, vy, vz]^T  (6D)
@@ -22,44 +25,60 @@ class MPCController:
         self.B[0:3, 0:3] = 0.5 * (self.dt**2) * np.eye(3)
         self.B[3:6, 0:3] = self.dt * np.eye(3)
 
-        # Build prediction matrices M and C such that:
-        # Z = M * z0 + C * U
-        # where Z = [z_1^T, ..., z_N^T]^T  (6N x 1)
-        #       U = [u_0^T, ..., u_{N-1}^T]^T  (3N x 1)
-        self.M = []
-        for i in range(1, self.N + 1):
-            self.M.append(np.linalg.matrix_power(self.A, i))
-        self.M = np.vstack(self.M)  # Shape (6N, 6)
+        # Precompute prediction matrices M and C for horizons 10, 20, and 30
+        self.M_dict = {}
+        self.C_dict = {}
+        for h in [10, 20, 30]:
+            M_h = []
+            for i in range(1, h + 1):
+                M_h.append(np.linalg.matrix_power(self.A, i))
+            self.M_dict[h] = np.vstack(M_h)  # Shape (6h, 6)
 
-        self.C = np.zeros((6 * self.N, 3 * self.N))
-        for r in range(self.N):
-            for c in range(r + 1):
-                power = r - c
-                self.C[r * 6 : (r + 1) * 6, c * 3 : (c + 1) * 3] = np.linalg.matrix_power(self.A, power) @ self.B
-
-        # Weight matrices for optimization cost:
-        # Q tracks position error and drift (6N x 6N)
-        # R penalizes control inputs/accelerations (3N x 3N)
-        q_single = np.diag([12.0, 12.0, 12.0, 0.4, 0.4, 0.4])
-        self.Q_d = np.kron(np.eye(self.N), q_single)
-
-        r_single = np.diag([1.2, 1.2, 1.2])
-        self.R_d = np.kron(np.eye(self.N), r_single)
-
-        # Precompute unconstrained optimal gain matrix:
-        # H = 2 * (C^T * Q_d * C + R_d)
-        # g = 2 * C^T * Q_d * (M * z0 - Z_ref)
-        # U* = -H^-1 * g = -K_mpc * (M * z0 - Z_ref)
-        # where K_mpc = (C^T * Q_d * C + R_d)^-1 * C^T * Q_d
-        self.H_cost = self.C.T @ self.Q_d @ self.C + self.R_d
-        self.K_mpc = np.linalg.inv(self.H_cost) @ self.C.T @ self.Q_d
+            C_h = np.zeros((6 * h, 3 * h))
+            for r in range(h):
+                for c in range(r + 1):
+                    power = r - c
+                    C_h[r * 6 : (r + 1) * 6, c * 3 : (c + 1) * 3] = np.linalg.matrix_power(self.A, power) @ self.B
+            self.C_dict[h] = C_h
 
         # Performance constraints
-        self.vxy_max = 0.15
-        self.vz_max = 0.15
+        self.vxy_max = 0.08
+        self.vz_max = 0.08
         self.a_max = 2.0  # m/s^2
 
-    def compute_control(self, cur_pos: np.ndarray, cur_vel: np.ndarray, target_wp: np.ndarray) -> np.ndarray:
+        # Logs of adaptive values
+        self.last_horizon = self.N
+        self.last_q_scale = 1.0
+        self.last_r_scale = 1.0
+
+        # Upgrade 1 & 2 states
+        self.current_horizon = float(self.N)
+        self.last_target_horizon = self.N
+        self.last_actual_horizon = self.N
+        self.consecutive_cycles = 0
+        self.switch_count = 0
+        self.step_counter = 0
+
+        self.prev_vel_cmd = np.zeros(3)
+        self.vel_filter_coef = 0.20  # configurable coefficient
+
+        self.last_raw_vel_cmd = np.zeros(3)
+        self.last_filtered_vel_cmd = np.zeros(3)
+        self.last_target_horizon_logged = self.N
+        self.last_actual_horizon_logged = self.N
+        self.switching_frequency = 0.0
+
+    def compute_control(
+        self,
+        cur_pos: np.ndarray,
+        cur_vel: np.ndarray,
+        target_wp: np.ndarray,
+        obstacle_density: float = 0.0,
+        target_distance: float = 0.0,
+        velocity_magnitude: float = 0.0,
+        waypoint_curvature: float = 0.0,
+        adaptive: bool = True
+    ) -> np.ndarray:
         """Computes the optimal desired velocity vector toward a target waypoint.
 
         Parameters
@@ -70,23 +89,95 @@ class MPCController:
             (3,)-shaped array of the current drone 3D velocity vector.
         target_wp : np.ndarray
             (3,)-shaped array of the target waypoint coordinates.
+        obstacle_density : float
+            Fraction of local space occupied by obstacles.
+        target_distance : float
+            Distance to the final target sphere.
+        velocity_magnitude : float
+            Current drone speed.
+        waypoint_curvature : float
+            Curvature of the path waypoints.
+        adaptive : bool
+            Whether to use adaptive horizons and cost weight scaling.
 
         Returns
         -------
         np.ndarray
             (3,)-shaped array of desired velocities [vx, vy, vz].
-
         """
+        # 1. Select Horizon (N) based on complexity
+        self.step_counter += 1
+        if not adaptive:
+            N = self.N
+            q_pos_scale = 1.0
+            r_scale = 1.0
+            self.last_target_horizon_logged = self.N
+            self.last_actual_horizon_logged = self.N
+        else:
+            if obstacle_density < 0.05:
+                target_horizon = 10
+            elif obstacle_density < 0.20:
+                target_horizon = 20
+            else:
+                target_horizon = 30
+
+            self.last_target_horizon_logged = target_horizon
+
+            # Only switch if target horizon is stable for >= 5 consecutive control cycles
+            if target_horizon == self.last_target_horizon:
+                self.consecutive_cycles += 1
+            else:
+                self.consecutive_cycles = 1
+                self.last_target_horizon = target_horizon
+
+            if self.consecutive_cycles >= 5:
+                self.current_horizon = 0.9 * self.current_horizon + 0.1 * target_horizon
+
+            N = min([10, 20, 30], key=lambda x: abs(x - self.current_horizon))
+
+            if N != self.last_actual_horizon:
+                self.switch_count += 1
+                self.last_actual_horizon = N
+
+            self.last_actual_horizon_logged = N
+            self.switching_frequency = self.switch_count / self.step_counter
+
+            # 2. Adaptive Cost Weights
+            # Increase tracking weight near obstacles (scale Q position weights)
+            q_pos_scale = 1.0 + 4.0 * min(1.0, obstacle_density / 0.3)
+            
+            # Increase smoothness weight at high velocity (scale R control weights)
+            r_scale = 1.0 + 3.0 * min(1.0, velocity_magnitude / 0.15)
+
+        self.last_horizon = N
+        self.last_q_scale = q_pos_scale
+        self.last_r_scale = r_scale
+
+        # Retrieve precomputed matrices
+        M = self.M_dict[N]
+        C = self.C_dict[N]
+
+        # Construct dynamic Q_d and R_d matrices
+        q_single = np.diag([12.0 * q_pos_scale, 12.0 * q_pos_scale, 12.0 * q_pos_scale, 0.4, 0.4, 0.4])
+        Q_d = np.kron(np.eye(N), q_single)
+
+        r_single = np.diag([1.2 * r_scale, 1.2 * r_scale, 1.2 * r_scale])
+        R_d = np.kron(np.eye(N), r_single)
+
+        # Solve for the unconstrained optimal gain matrix K_mpc
+        H_cost = C.T @ Q_d @ C + R_d
+        K_mpc = np.linalg.inv(H_cost) @ C.T @ Q_d
+
         # Current initial state z0
         z0 = np.concatenate([cur_pos, cur_vel])
 
         # Reference trajectory Z_ref: hold position at waypoint with zero velocity
         z_ref_single = np.concatenate([target_wp, np.zeros(3)])
-        Z_ref = np.kron(np.ones(self.N), z_ref_single)
+        Z_ref = np.kron(np.ones(N), z_ref_single)
 
         # Solve unconstrained MPC trajectory
-        error_term = self.M @ z0 - Z_ref
-        U = -self.K_mpc @ error_term
+        error_term = M @ z0 - Z_ref
+        U = -K_mpc @ error_term
 
         # Extract the first control input (acceleration for current step)
         u0 = U[0:3]
@@ -94,7 +185,7 @@ class MPCController:
         # Enforce acceleration limit
         u0_clipped = np.clip(u0, -self.a_max, self.a_max)
 
-        # Desired velocity vector computed from dynamics
+        # Desired velocity command
         vel_cmd = cur_vel + u0_clipped * self.dt
 
         # Enforce velocity limits
@@ -102,4 +193,10 @@ class MPCController:
         vel_cmd[1] = np.clip(vel_cmd[1], -self.vxy_max, self.vxy_max)
         vel_cmd[2] = np.clip(vel_cmd[2], -self.vz_max, self.vz_max)
 
-        return vel_cmd
+        # Apply low-pass filter
+        self.last_raw_vel_cmd = np.copy(vel_cmd)
+        vel_cmd_filtered = (1.0 - self.vel_filter_coef) * self.prev_vel_cmd + self.vel_filter_coef * vel_cmd
+        self.prev_vel_cmd = np.copy(vel_cmd_filtered)
+        self.last_filtered_vel_cmd = np.copy(vel_cmd_filtered)
+
+        return vel_cmd_filtered
