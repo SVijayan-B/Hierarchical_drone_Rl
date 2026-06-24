@@ -116,7 +116,7 @@ def run_compare(model_path, vecnorm_path, cfg: CompareConfig, trans_model_path=N
     else:
         print("Warning: PPO Gain Scheduler weights not found. Using randomly initialized weights.")
 
-    # Define the 7 configurations
+    # Define the 6 configurations
     # (key, use_scheduler, demo_guided, use_mpc, use_rl_gain, use_adaptive_mpc, use_history, display_name, is_transformer)
     configs = [
         ("pid_only", False, True, False, False, False, False, "PID-Only", False),
@@ -125,7 +125,6 @@ def run_compare(model_path, vecnorm_path, cfg: CompareConfig, trans_model_path=N
         ("rl_mpc_baseline", False, False, True, False, False, False, "PPO MLP + MPC + PID", False),
         ("rl_mpc_adaptive", True, False, True, False, False, False, "PPO MLP + MPC + Adaptive PID", False),
         ("trans_mpc_adaptive", True, False, True, False, False, True, "Transformer PPO + MPC + Adaptive PID", True),
-        ("trans_mpc_rl_scheduler", False, False, True, True, True, True, "Transformer PPO + Adaptive MPC + RL Gain Scheduler", True),
     ]
 
     runs_data = {}
@@ -365,12 +364,12 @@ def run_compare(model_path, vecnorm_path, cfg: CompareConfig, trans_model_path=N
             print(text)
             f.write(text + "\n")
 
-        write_and_print("=" * 180)
-        write_and_print("                                                      7-WAY DRONE PERFORMANCE COMPARISON REPORT (HONORS EDITION)")
-        write_and_print("=" * 180)
+        write_and_print("=" * 132)
+        write_and_print("                                             6-WAY DRONE PERFORMANCE COMPARISON REPORT (HONORS EDITION)")
+        write_and_print("=" * 132)
         write_and_print(f"Evaluated over {cfg.rounds} rounds with matched seeds.")
         write_and_print(f"Domain Randomization: {domain_rand_enabled}")
-        write_and_print("-" * 180)
+        write_and_print("-" * 132)
         write_and_print(
             f"{'Metric':<32} | "
             f"{'PID-Only':<12} | "
@@ -378,10 +377,9 @@ def run_compare(model_path, vecnorm_path, cfg: CompareConfig, trans_model_path=N
             f"{'PPO MLP+A':<12} | "
             f"{'MLP+MPC':<12} | "
             f"{'MLP+M+A':<12} | "
-            f"{'Trans+M+A':<12} | "
-            f"{'Trans+AM+RL':<12}"
+            f"{'Trans+M+A':<12}"
         )
-        write_and_print("-" * 180)
+        write_and_print("-" * 132)
 
         # Standard metrics
         metrics_to_print = [
@@ -419,8 +417,7 @@ def run_compare(model_path, vecnorm_path, cfg: CompareConfig, trans_model_path=N
                 f"{vals_str[2]:<12} | "
                 f"{vals_str[3]:<12} | "
                 f"{vals_str[4]:<12} | "
-                f"{vals_str[5]:<12} | "
-                f"{vals_str[6]:<12}"
+                f"{vals_str[5]:<12}"
             )
         
         # Robustness & Sim-to-Real scores
@@ -443,8 +440,7 @@ def run_compare(model_path, vecnorm_path, cfg: CompareConfig, trans_model_path=N
             f"{rob_scores[2]:.4f}         | "
             f"{rob_scores[3]:.4f}         | "
             f"{rob_scores[4]:.4f}         | "
-            f"{rob_scores[5]:.4f}         | "
-            f"{rob_scores[6]:.4f}"
+            f"{rob_scores[5]:.4f}"
         )
         write_and_print(
             f"{'Sim-to-Real Readiness Score':<32} | "
@@ -453,17 +449,16 @@ def run_compare(model_path, vecnorm_path, cfg: CompareConfig, trans_model_path=N
             f"{s2r_scores[2]:.2f}         | "
             f"{s2r_scores[3]:.2f}         | "
             f"{s2r_scores[4]:.2f}         | "
-            f"{s2r_scores[5]:.2f}         | "
-            f"{s2r_scores[6]:.2f}"
+            f"{s2r_scores[5]:.2f}"
         )
-        write_and_print("=" * 180)
+        write_and_print("=" * 132)
 
     print(f"Summary report written to {summary_path}")
 
     # Plot 1: Target Distance over time comparison for round 0
     plt.figure(figsize=(11, 6))
-    colors = ['#7f7f7f', '#1f77b4', '#aec7e8', '#ff7f0e', '#ffbb78', '#2ca02c', '#d62728']
-    linestyles = [':', '--', '-.', '-', '-', '-', '-']
+    colors = ['#7f7f7f', '#1f77b4', '#aec7e8', '#ff7f0e', '#ffbb78', '#2ca02c']
+    linestyles = [':', '--', '-.', '-', '-', '-']
     for idx, (key, _, _, _, _, _, _, disp, _) in enumerate(configs):
         if key in dist_histories:
             plt.plot(
@@ -489,13 +484,6 @@ def run_compare(model_path, vecnorm_path, cfg: CompareConfig, trans_model_path=N
         plt.plot(time_histories["rl_adaptive"][: len(gain_histories["rl_adaptive"])], gain_histories["rl_adaptive"], "b--", label="PPO MLP + Adaptive PID")
     if "rl_mpc_adaptive" in gain_histories:
         plt.plot(time_histories["rl_mpc_adaptive"][: len(gain_histories["rl_mpc_adaptive"])], gain_histories["rl_mpc_adaptive"], "m-.", label="PPO MLP + MPC + Adaptive PID")
-    if "trans_mpc_rl_scheduler" in gain_histories:
-        gh = np.array(gain_histories["trans_mpc_rl_scheduler"])
-        if len(gh.shape) > 1:
-            plt.plot(time_histories["trans_mpc_rl_scheduler"][: len(gh)], gh[:, 0], "r-", label="RL Gain Scheduler (Pos)")
-            plt.plot(time_histories["trans_mpc_rl_scheduler"][: len(gh)], gh[:, 1], "g-", label="RL Gain Scheduler (Att)")
-        else:
-            plt.plot(time_histories["trans_mpc_rl_scheduler"][: len(gh)], gh, "r-", label="RL Gain Scheduler (Avg)")
     plt.xlabel("Simulation Time (s)")
     plt.ylabel("Gain Scale (multiplier)")
     plt.title("PID Gain Scale Modulation over Time (Round 1)")
@@ -510,7 +498,7 @@ def run_compare(model_path, vecnorm_path, cfg: CompareConfig, trans_model_path=N
     fig, axes = plt.subplots(4, 3, figsize=(18, 20))
     axes = axes.flatten()
 
-    short_categories = ["PID", "PPO", "PPO+A", "MLP+MPC", "MLP+M+A", "Trans+M+A", "Trans+AM+RL"]
+    short_categories = ["PID", "PPO", "PPO+A", "MLP+MPC", "MLP+M+A", "Trans+M+A"]
     
     metrics_to_plot = [
         ("mean_err", "Mean Tracking Error", "Error (m)"),
@@ -539,7 +527,7 @@ def run_compare(model_path, vecnorm_path, cfg: CompareConfig, trans_model_path=N
         ax.grid(axis="y")
         ax.tick_params(axis="x", labelrotation=25, labelsize=9)
 
-    plt.suptitle("7-Way UAV Control Stack Upgrade - Unified Benchmarks", fontsize=18, fontweight="bold", y=0.98)
+    plt.suptitle("6-Way UAV Control Stack Upgrade - Unified Benchmarks", fontsize=18, fontweight="bold", y=0.98)
     plt.tight_layout(rect=[0, 0.02, 1, 0.96])
     plt.savefig(os.path.join(out_dir, "metrics_comparison.png"))
     plt.close()

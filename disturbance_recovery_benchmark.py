@@ -114,7 +114,6 @@ def main():
         ("rl_mpc_baseline", False, False, True, False, False, False, "PPO MLP + MPC + PID", False),
         ("rl_mpc_adaptive", True, False, True, False, False, False, "PPO MLP + MPC + Adaptive PID", False),
         ("trans_mpc_adaptive", True, False, True, False, False, True, "Transformer PPO + MPC + Adaptive PID", True),
-        ("trans_mpc_rl_scheduler", False, False, True, True, True, True, "Transformer PPO + Adaptive MPC + RL Gain Scheduler", True),
     ]
 
     scenarios = [
@@ -349,7 +348,7 @@ def main():
 
     # Generate Plot 1: Scenario D Tracking Error & Impulse Recovery Time
     plt.figure(figsize=(10, 6))
-    colors = ['#7f7f7f', '#1f77b4', '#aec7e8', '#ff7f0e', '#ffbb78', '#2ca02c', '#d62728']
+    colors = ['#7f7f7f', '#1f77b4', '#aec7e8', '#ff7f0e', '#ffbb78', '#2ca02c']
     for idx, (key, _, _, _, _, _, _, disp, _) in enumerate(configs):
         errors = tracking_history["Scenario D"].get(key, [])
         t_vec = np.arange(len(errors)) * 0.1
@@ -374,7 +373,7 @@ def main():
         success_rates = [np.mean([d["success"] for d in results[s[0]][key]]) for s in scenarios]
         ax.bar(x_indices + idx * bar_width, success_rates, width=bar_width, color=colors[idx], label=disp)
 
-    ax.set_xticks(x_indices + 3 * bar_width)
+    ax.set_xticks(x_indices + (len(configs) - 1) / 2 * bar_width)
     ax.set_xticklabels([s[1] for s in scenarios], rotation=15)
     ax.set_ylabel("Success Rate")
     ax.set_title("Configuration Robustness Success Rates Across Disturbance Scenarios")
