@@ -52,7 +52,8 @@ def make_env(
     use_rl_gain_scheduler: bool = False,
     use_mpc_layer: bool = False,
     use_adaptive_mpc: bool = False,
-    domain_randomization: bool = False
+    domain_randomization: bool = False,
+    demo_guided_mode: bool = False
 ):
     def _thunk():
         env = HierarchicalNavEnv(
@@ -65,6 +66,7 @@ def make_env(
             use_mpc_layer=use_mpc_layer,
             use_adaptive_mpc=use_adaptive_mpc,
             domain_randomization=domain_randomization,
+            demo_guided_mode=demo_guided_mode
         )
         return Monitor(env)
 
@@ -93,7 +95,8 @@ def train(
             use_rl_gain_scheduler=use_rl_gain_scheduler,
             use_mpc_layer=use_mpc_layer,
             use_adaptive_mpc=use_adaptive_mpc,
-            domain_randomization=domain_randomization
+            domain_randomization=domain_randomization,
+            demo_guided_mode=False
         )
     ])
     vec_env = VecNormalize(vec_env, norm_obs=True, norm_reward=True, clip_obs=10.0)
@@ -106,7 +109,8 @@ def train(
             use_rl_gain_scheduler=use_rl_gain_scheduler,
             use_mpc_layer=use_mpc_layer,
             use_adaptive_mpc=use_adaptive_mpc,
-            domain_randomization=False
+            domain_randomization=False,
+            demo_guided_mode=False
         )
     ])
     eval_env = VecNormalize(eval_env, norm_obs=True, norm_reward=False, clip_obs=10.0, training=False)

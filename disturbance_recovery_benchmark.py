@@ -62,11 +62,15 @@ def main():
     parser.add_argument("--rounds", type=int, default=3)
     parser.add_argument("--gui", action="store_true")
     parser.add_argument("--seed", type=int, default=11)
+    parser.add_argument("--model", type=str, default=None, help="Path to MLP PPO model")
+    parser.add_argument("--vecnorm", type=str, default=None, help="Path to MLP VecNormalize pickle")
+    parser.add_argument("--trans_model", type=str, default=None, help="Path to Transformer PPO model")
+    parser.add_argument("--trans_vecnorm", type=str, default=None, help="Path to Transformer VecNormalize pickle")
     args = parser.parse_args()
 
     default_run = os.path.join("results_hierarchical", "run_20260513_112909")
-    model_mlp_path = os.path.join(default_run, "final_model.zip")
-    vecnorm_mlp_path = os.path.join(default_run, "vecnormalize.pkl")
+    model_mlp_path = args.model if args.model else os.path.join(default_run, "final_model.zip")
+    vecnorm_mlp_path = args.vecnorm if args.vecnorm else os.path.join(default_run, "vecnormalize.pkl")
 
     if not os.path.exists(model_mlp_path):
         # Auto-detect latest run in results_hierarchical
@@ -76,19 +80,20 @@ def main():
             model_mlp_path = os.path.join(runs[-1], "final_model.zip")
             vecnorm_mlp_path = os.path.join(runs[-1], "vecnormalize.pkl")
         else:
-            raise FileNotFoundError("Could not find baseline PPO MLP model.")
+            raise FileNotFoundError(f"Could not find baseline PPO MLP model at {model_mlp_path}")
 
-    # Auto-detect transformer model
-    trans_model_path = None
-    trans_vecnorm_path = None
-    trans_runs = glob.glob(os.path.join("results_hierarchical", "*trans*"))
-    if trans_runs:
-        trans_runs.sort()
-        latest_trans_run = trans_runs[-1]
-        best_model = os.path.join(latest_trans_run, "best", "best_model.zip")
-        final_model = os.path.join(latest_trans_run, "final_model.zip")
-        trans_model_path = best_model if os.path.exists(best_model) else final_model
-        trans_vecnorm_path = os.path.join(latest_trans_run, "vecnormalize.pkl")
+    # Auto-detect or use specified transformer model
+    trans_model_path = args.trans_model
+    trans_vecnorm_path = args.trans_vecnorm
+    if not trans_model_path:
+        trans_runs = glob.glob(os.path.join("results_hierarchical", "*trans*"))
+        if trans_runs:
+            trans_runs.sort()
+            latest_trans_run = trans_runs[-1]
+            best_model = os.path.join(latest_trans_run, "best", "best_model.zip")
+            final_model = os.path.join(latest_trans_run, "final_model.zip")
+            trans_model_path = best_model if os.path.exists(best_model) else final_model
+            trans_vecnorm_path = os.path.join(latest_trans_run, "vecnormalize.pkl")
 
     # Load policies
     model_mlp = PPO.load(model_mlp_path)
@@ -97,14 +102,23 @@ def main():
 
     # Auto-detect PPO Gain Scheduler weights
     scheduler_pt_path = None
-    if trans_runs:
-        for run in reversed(trans_runs):
-            for p_path in [os.path.join(run, "best", "scheduler_best.pt"), os.path.join(run, "scheduler_final.pt")]:
-                if os.path.exists(p_path):
-                    scheduler_pt_path = p_path
-                    break
-            if scheduler_pt_path:
+    if trans_model_path:
+        d = os.path.dirname(trans_model_path)
+        for sched_p in [os.path.join(d, "scheduler_best.pt"), os.path.join(d, "scheduler_final.pt"), os.path.join(os.path.dirname(d), "scheduler_final.pt"), os.path.join(d, "best", "scheduler_best.pt")]:
+            if os.path.exists(sched_p):
+                scheduler_pt_path = sched_p
                 break
+    if not scheduler_pt_path:
+        trans_runs = glob.glob(os.path.join("results_hierarchical", "*trans*"))
+        if trans_runs:
+            trans_runs.sort()
+            for run in reversed(trans_runs):
+                for p_path in [os.path.join(run, "best", "scheduler_best.pt"), os.path.join(run, "scheduler_final.pt")]:
+                    if os.path.exists(p_path):
+                        scheduler_pt_path = p_path
+                        break
+                if scheduler_pt_path:
+                    break
 
     # Configurations list
     configs = [

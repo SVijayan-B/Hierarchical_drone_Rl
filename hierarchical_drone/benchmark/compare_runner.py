@@ -92,21 +92,21 @@ def run_compare(model_path, vecnorm_path, cfg: CompareConfig, trans_model_path=N
     scheduler_pt_path = None
     if trans_model_path:
         d = os.path.dirname(trans_model_path)
-        for p in [os.path.join(d, "scheduler_best.pt"), os.path.join(d, "scheduler_final.pt"), os.path.join(os.path.dirname(d), "scheduler_final.pt")]:
-            if os.path.exists(p):
-                scheduler_pt_path = p
+        for sched_p in [os.path.join(d, "scheduler_best.pt"), os.path.join(d, "scheduler_final.pt"), os.path.join(os.path.dirname(d), "scheduler_final.pt")]:
+            if os.path.exists(sched_p):
+                scheduler_pt_path = sched_p
                 break
     if not scheduler_pt_path:
         trans_runs = glob.glob(os.path.join("results_hierarchical", "*trans*"))
         if trans_runs:
             trans_runs.sort()
             for latest_run in reversed(trans_runs):
-                for p in [
+                for sched_p in [
                     os.path.join(latest_run, "best", "scheduler_best.pt"),
                     os.path.join(latest_run, "scheduler_final.pt"),
                 ]:
-                    if os.path.exists(p):
-                        scheduler_pt_path = p
+                    if os.path.exists(sched_p):
+                        scheduler_pt_path = sched_p
                         break
                 if scheduler_pt_path:
                     break
