@@ -1,5 +1,6 @@
 import random
 import inspect
+import collections
 from typing import Dict, Optional, List, Tuple
 
 import gymnasium as gym
@@ -8,8 +9,8 @@ import pybullet as p
 from gymnasium import spaces
 
 from gym_pybullet_drones.envs.CtrlAviary import CtrlAviary
-from gym_pybullet_drones.control.DSLPIDControl import DSLPIDControl
 from gym_pybullet_drones.utils.enums import DroneModel, Physics
+from hierarchical_drone.controllers.pid_controller import UpgradedDSLPIDControl
 
 from hierarchical_drone.config.settings import (
     ActionConfig,
@@ -35,12 +36,13 @@ class HierarchicalNavEnv(gym.Env):
         use_adaptive_scheduler: bool = True,
         demo_guided_mode: bool = True,
         use_mpc_layer: bool = False,
-        use_rl_gain_scheduler: bool = False,
+        use_rl_gain_scheduler: bool = False,  # Kept parameter for compatibility, but ignored
         use_adaptive_mpc: bool = False,
         use_history: bool = False,
         domain_randomization: bool = False,
         energy_lambda: float = 0.005,
-        telemetry_dir: str = "results/telemetry"
+        telemetry_dir: str = "results/telemetry",
+        use_robust_obs: bool = True
     ):
         super().__init__()
         self.sim_cfg = sim
@@ -51,7 +53,8 @@ class HierarchicalNavEnv(gym.Env):
 
         self.use_adaptive_scheduler = use_adaptive_scheduler
         self.scheduler = AdaptiveGainScheduler()
-        self.use_rl_gain_scheduler = use_rl_gain_scheduler
+        self.use_rl_gain_scheduler = False  # Completely removed RL Gain Scheduler
+        self.rl_gain_scheduler = None
         self.use_adaptive_mpc = use_adaptive_mpc
         self.use_history = use_history
         self.domain_randomization = domain_randomization
@@ -62,13 +65,6 @@ class HierarchicalNavEnv(gym.Env):
         self.gain_scale_att = 1.0
         self.target_gain_scale_pos = 1.0
         self.target_gain_scale_att = 1.0
-
-        # RLGainScheduler
-        if self.use_rl_gain_scheduler:
-            from hierarchical_drone.controllers.rl_gain_scheduler import RLGainScheduler
-            self.rl_gain_scheduler = RLGainScheduler()
-        else:
-            self.rl_gain_scheduler = None
 
         self.use_mpc_layer = use_mpc_layer
         if self.use_mpc_layer:
@@ -101,9 +97,27 @@ class HierarchicalNavEnv(gym.Env):
         self.client = self.env.getPyBulletClient()
         self.drone_id = self.env.DRONE_IDS[0]
 
-        self.stab_ctrl = DSLPIDControl(drone_model=DroneModel.CF2X)
+        # Initialize UpgradedDSLPIDControl
+        self.stab_ctrl = UpgradedDSLPIDControl(drone_model=DroneModel.CF2X)
         self.imu = IMUSensor(sensor_cfg.imu_angle_noise_std, sensor_cfg.imu_rate_noise_std, sensor_cfg.imu_acc_noise_std)
         self.ultra = UltrasonicArray(sensor_cfg.ultrasonic_max_range, sensor_cfg.ultrasonic_noise_std)
+
+        # Cache nominal parameters for domain randomization
+        self.nominal_J = np.copy(self.env.J)
+        self.nominal_J_INV = np.copy(self.env.J_INV)
+        self.nominal_drag_coeff = np.copy(self.env.DRAG_COEFF)
+        self.nominal_inertia_diagonal = np.array([self.env.J[0, 0], self.env.J[1, 1], self.env.J[2, 2]], dtype=np.float32)
+
+        # Safety & Disturbance Recovery state variables
+        self.last_applied_rpm = np.ones(4) * self.drone_cfg.hover_rpm
+        self.disturbance_recovery_counter = 0
+        self.vel_noise_std = 0.0
+        self.pos_noise_std = 0.0
+        self.motor_latency_steps = 0
+        self.battery_scale = 1.0
+        self.motor_efficiencies = np.ones(4, dtype=np.float32)
+        self.motor_action_queue = collections.deque()
+        self.hover_rpm = self.drone_cfg.hover_rpm
 
         # Store base gains for the scheduler
         self.P_COEFF_FOR_BASE = np.copy(self.stab_ctrl.P_COEFF_FOR)
@@ -111,6 +125,8 @@ class HierarchicalNavEnv(gym.Env):
         self.D_COEFF_FOR_BASE = np.copy(self.stab_ctrl.D_COEFF_FOR)
         self.P_COEFF_TOR_BASE = np.copy(self.stab_ctrl.P_COEFF_TOR)
         self.I_COEFF_TOR_BASE = np.copy(self.stab_ctrl.I_COEFF_TOR)
+        # Enable roll and pitch integrators to reject steady-state motor efficiency asymmetries
+        self.I_COEFF_TOR_BASE[0:2] = 800.0
         self.D_COEFF_TOR_BASE = np.copy(self.stab_ctrl.D_COEFF_TOR)
 
         self.target = np.zeros(3, dtype=np.float32)
@@ -139,16 +155,21 @@ class HierarchicalNavEnv(gym.Env):
         # Evaluation mode (sets deterministic behaviour in schedulers)
         self.evaluation_mode = False
 
+        self.use_robust_obs = use_robust_obs
         self.obs_dim = 25
+        if self.use_robust_obs:
+            self.obs_dim += 2
         if self.use_history:
-            self.obs_dim = 25 + 9  # 34
+            self.obs_dim += 9
+
+        if self.use_history:
             self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(20 * self.obs_dim,), dtype=np.float32)
             self.obs_history_buffer: List[np.ndarray] = []
         else:
             self.observation_space = spaces.Box(low=-1.0, high=1.0, shape=(self.obs_dim,), dtype=np.float32)
 
         self.action_space = spaces.Box(low=-1.0, high=1.0, shape=(4,), dtype=np.float32)
-        print(f"[INFO] Using DSLPIDControl from: {inspect.getfile(DSLPIDControl)}")
+        print(f"[INFO] Using UpgradedDSLPIDControl from: {inspect.getfile(UpgradedDSLPIDControl)}")
 
         # Telemetry Logger
         self.telemetry_dir = telemetry_dir
@@ -315,21 +336,28 @@ class HierarchicalNavEnv(gym.Env):
         vel = state[10:13]
         rates = state[13:16]
 
+        # Noisy sensor estimates for position and velocity (ensure input is through sensors)
+        pos_noise = np.random.normal(0.0, self.pos_noise_std, size=3) if self.pos_noise_std > 0.0 else np.zeros(3)
+        vel_noise = np.random.normal(0.0, self.vel_noise_std, size=3) if self.vel_noise_std > 0.0 else np.zeros(3)
+        
+        pos_sensor = pos + pos_noise
+        vel_sensor = vel + vel_noise
+
         imu = self.imu.read(state, self.ctrl_dt)
         self.last_imu_readings = imu
         ignore_list = [self.target_vis_id] if self.target_vis_id is not None else []
         ultra = self.ultra.read(self.drone_id, pos, rpy, self.client, ignore_ids=ignore_list)
 
-        rel = self.target - pos
-        dist = float(np.linalg.norm(rel))
+        rel_sensor = self.target - pos_sensor
+        dist_sensor = float(np.linalg.norm(rel_sensor))
 
         obs = np.array([
-            self._norm(pos[0], 3.0), self._norm(pos[1], 3.0), self._norm(pos[2], 2.5),
-            self._norm(vel[0], 3.0), self._norm(vel[1], 3.0), self._norm(vel[2], 2.0),
+            self._norm(pos_sensor[0], 3.0), self._norm(pos_sensor[1], 3.0), self._norm(pos_sensor[2], 2.5),
+            self._norm(vel_sensor[0], 3.0), self._norm(vel_sensor[1], 3.0), self._norm(vel_sensor[2], 2.0),
             self._norm(imu["roll"], np.pi), self._norm(imu["pitch"], np.pi), self._norm(imu["yaw"], np.pi),
             self._norm(imu["p"], 5.0), self._norm(imu["q"], 5.0), self._norm(imu["r"], 5.0),
-            self._norm(rel[0], 4.0), self._norm(rel[1], 4.0), self._norm(rel[2], 2.5),
-            self._norm(dist, 5.0),
+            self._norm(rel_sensor[0], 4.0), self._norm(rel_sensor[1], 4.0), self._norm(rel_sensor[2], 2.5),
+            self._norm(dist_sensor, 5.0),
             self._norm(ultra["front"], self.sensor_cfg.ultrasonic_max_range),
             self._norm(ultra["left"], self.sensor_cfg.ultrasonic_max_range),
             self._norm(ultra["right"], self.sensor_cfg.ultrasonic_max_range),
@@ -338,15 +366,22 @@ class HierarchicalNavEnv(gym.Env):
             self.prev_action[0], self.prev_action[1], self.prev_action[2], self.prev_action[3],
         ], dtype=np.float32)
 
+        if self.use_robust_obs:
+            # Append normalized noise estimate and latency indicators
+            obs = np.concatenate([obs, np.array([
+                self._norm(self.vel_noise_std, 0.05),
+                self._norm(self.motor_latency_steps, 3.0)
+            ], dtype=np.float32)])
+
         if self.use_history:
             # Upgrade 7: Append extra features
             horizon_val = float(self.mpc.last_horizon) if self.use_mpc_layer else 20.0
             q_scale_val = float(self.mpc.last_q_scale) if self.use_mpc_layer else 1.0
             r_scale_val = float(self.mpc.last_r_scale) if self.use_mpc_layer else 1.0
             energy_val = float(getattr(self, "step_energy", 0.0))
-            dist_trend_val = dist - (self.dist_history[-2] if len(self.dist_history) > 1 else dist)
+            dist_trend_val = dist_sensor - (self.dist_history[-2] if len(self.dist_history) > 1 else dist_sensor)
             
-            tracking_err = float(np.linalg.norm(pos - self.pos_ref))
+            tracking_err = float(np.linalg.norm(pos_sensor - self.pos_ref))
             prev_tracking_err = getattr(self, "prev_tracking_error", tracking_err)
             tracking_error_trend_val = tracking_err - prev_tracking_err
             
@@ -363,7 +398,7 @@ class HierarchicalNavEnv(gym.Env):
             ], dtype=np.float32)
             obs = np.concatenate([obs, extra_obs])
 
-        extras = {"dist": dist, "ultra": ultra, "rpy": rpy, "rates": rates, "vel": vel}
+        extras = {"dist": dist_sensor, "ultra": ultra, "rpy": rpy, "rates": rates, "vel": vel_sensor}
         return obs, extras
 
     def _action_to_vel_cmd(self, action):
@@ -396,38 +431,124 @@ class HierarchicalNavEnv(gym.Env):
         self._spawn_target()
         self._spawn_obstacles()
 
-        # Domain Randomization implementation
+        # Domain Randomization implementation with Curriculum Learning
+        phase = getattr(self, "curriculum_phase", 5)
+
         if self.domain_randomization:
-            # 1. Mass is kept constant at nominal value as requested
-            rand_mass = self.drone_cfg.mass_kg
-            p.changeDynamics(self.drone_id, -1, mass=rand_mass, physicsClientId=self.client)
+            # 1. Mass Randomization
+            if phase == 1:
+                mass_scale = random.uniform(0.95, 1.05)
+            else:
+                mass_scale = random.uniform(0.85, 1.15)
+            self.env.M = self.drone_cfg.mass_kg * mass_scale
+            
+            # 2. Inertia Randomization
+            if phase >= 2:
+                inertia_scale = random.uniform(0.85, 1.15)
+                self.env.J = self.nominal_J * inertia_scale
+                self.env.J_INV = np.linalg.inv(self.env.J)
+                local_inertia = self.nominal_inertia_diagonal * inertia_scale
+            else:
+                self.env.J = np.copy(self.nominal_J)
+                self.env.J_INV = np.copy(self.nominal_J_INV)
+                local_inertia = self.nominal_inertia_diagonal
+                
+            p.changeDynamics(self.drone_id, -1, mass=self.env.M, localInertiaDiagonal=local_inertia.tolist(), physicsClientId=self.client)
 
-            # 2. Randomize wind magnitude 0-3 N (scaled to physically manageable force of 0-0.045 N for CF2X)
-            wind_mag = random.uniform(0.0, 3.0)
-            wind_dir = np.random.normal(0.0, 1.0, size=3)
-            wind_dir /= np.linalg.norm(wind_dir) + 1e-8
-            self.active_wind_disturbance = wind_dir * (wind_mag * 0.015)
-            self.active_wind_freq = np.random.uniform(0.1, 1.0, size=3)
+            # 3. Thrust Coeff (KF) & Battery Voltage Scaling
+            if phase >= 2:
+                kf_scale = random.uniform(0.85, 1.15)
+                self.env.KF = self.drone_cfg.kf * kf_scale
+                self.battery_scale = random.uniform(0.90, 1.10)
+            else:
+                self.env.KF = self.drone_cfg.kf
+                self.battery_scale = 1.0
 
-            # 3. Randomize sensor noise by 0-200%
-            noise_mult = random.uniform(0.0, 2.0)
-            self.imu.angle_noise_std = self.sensor_cfg.imu_angle_noise_std * noise_mult
-            self.imu.rate_noise_std = self.sensor_cfg.imu_rate_noise_std * noise_mult
-            self.imu.acc_noise_std = self.sensor_cfg.imu_acc_noise_std * noise_mult
-            self.ultra.noise_std = self.sensor_cfg.ultrasonic_noise_std * noise_mult
+            # 4. Aerodynamic Drag
+            if phase >= 2:
+                drag_scale = random.uniform(0.8, 1.2)
+                self.env.DRAG_COEFF = self.nominal_drag_coeff * drag_scale
+            else:
+                self.env.DRAG_COEFF = np.copy(self.nominal_drag_coeff)
 
-            # 4. Randomize motor efficiency in 0.85 to 1.15
-            self.motor_efficiencies = np.random.uniform(0.85, 1.15, size=4)
+            # 5. Motor Efficiency
+            if phase >= 2:
+                self.motor_efficiencies = np.random.uniform(0.90, 1.10, size=4)
+            else:
+                self.motor_efficiencies = np.ones(4, dtype=np.float32)
+
+            # 6. Sensor Noise
+            if phase >= 3:
+                noise_mult = random.uniform(0.0, 2.0)
+                self.imu.angle_noise_std = self.sensor_cfg.imu_angle_noise_std * noise_mult
+                self.imu.rate_noise_std = self.sensor_cfg.imu_rate_noise_std * noise_mult
+                self.imu.acc_noise_std = self.sensor_cfg.imu_acc_noise_std * noise_mult
+                self.ultra.noise_std = self.sensor_cfg.ultrasonic_noise_std * noise_mult
+                self.vel_noise_std = random.uniform(0.0, 0.05)
+                self.pos_noise_std = random.uniform(0.0, 0.02)
+            else:
+                self.imu.angle_noise_std = self.sensor_cfg.imu_angle_noise_std
+                self.imu.rate_noise_std = self.sensor_cfg.imu_rate_noise_std
+                self.imu.acc_noise_std = self.sensor_cfg.imu_acc_noise_std
+                self.ultra.noise_std = self.sensor_cfg.ultrasonic_noise_std
+                self.vel_noise_std = 0.0
+                self.pos_noise_std = 0.0
+
+            # 7. Motor Latency
+            if phase >= 4:
+                self.motor_latency_steps = random.randint(0, 3)
+            else:
+                self.motor_latency_steps = 0
+
+            # 8. Wind Disturbance
+            if phase >= 5:
+                wind_speed = random.uniform(0.0, 2.0)
+                wind_force_magnitude = wind_speed * 0.015
+                wind_dir = np.random.normal(0.0, 1.0, size=3)
+                wind_dir /= np.linalg.norm(wind_dir) + 1e-8
+                self.active_wind_disturbance = wind_dir * wind_force_magnitude
+                self.active_wind_freq = np.random.uniform(0.1, 1.0, size=3)
+            else:
+                self.active_wind_disturbance = np.zeros(3, dtype=np.float32)
+                self.active_wind_freq = np.zeros(3, dtype=np.float32)
         else:
-            # Reset mass, wind parameters, sensor noises and motor efficiency to nominal
-            p.changeDynamics(self.drone_id, -1, mass=self.drone_cfg.mass_kg, physicsClientId=self.client)
-            self.active_wind_disturbance = np.array(self.sim_cfg.wind_disturbance, dtype=np.float32)
-            self.active_wind_freq = np.array(self.sim_cfg.wind_freq_hz, dtype=np.float32)
+            # Set to nominal values
+            self.env.M = self.drone_cfg.mass_kg
+            self.env.J = np.copy(self.nominal_J)
+            self.env.J_INV = np.copy(self.nominal_J_INV)
+            self.env.KF = self.drone_cfg.kf
+            self.env.DRAG_COEFF = np.copy(self.nominal_drag_coeff)
+            p.changeDynamics(self.drone_id, -1, mass=self.env.M, localInertiaDiagonal=self.nominal_inertia_diagonal.tolist(), physicsClientId=self.client)
+            self.battery_scale = 1.0
+            self.motor_efficiencies = np.ones(4, dtype=np.float32)
             self.imu.angle_noise_std = self.sensor_cfg.imu_angle_noise_std
             self.imu.rate_noise_std = self.sensor_cfg.imu_rate_noise_std
             self.imu.acc_noise_std = self.sensor_cfg.imu_acc_noise_std
             self.ultra.noise_std = self.sensor_cfg.ultrasonic_noise_std
-            self.motor_efficiencies = np.ones(4, dtype=np.float32)
+            self.vel_noise_std = 0.0
+            self.pos_noise_std = 0.0
+            self.motor_latency_steps = 0
+            self.active_wind_disturbance = np.array(self.sim_cfg.wind_disturbance, dtype=np.float32)
+            self.active_wind_freq = np.array(self.sim_cfg.wind_freq_hz, dtype=np.float32)
+
+        # Update low-level stabilization controller gravity and KF online
+        self.stab_ctrl.GRAVITY = self.env.M * 9.81
+        eta_mean = np.mean(self.motor_efficiencies)
+        self.stab_ctrl.KF = self.env.KF * (eta_mean * self.battery_scale)**2
+
+        # Update hover RPM online
+        self.hover_rpm = np.sqrt((self.env.M * 9.81) / (4.0 * self.env.KF)) / (eta_mean * self.battery_scale)
+        self.env.HOVER_RPM = self.hover_rpm
+        self.estimated_hover_rpm = self.hover_rpm
+
+        # Reset latency queue and pre-fill it with hover RPM to avoid sudden latency jumps at takeoff
+        self.motor_action_queue.clear()
+        for _ in range(self.motor_latency_steps):
+            self.motor_action_queue.append(np.ones((1, 4)) * self.hover_rpm)
+        self.disturbance_recovery_counter = 0
+        self.last_applied_rpm = np.ones(4) * self.hover_rpm
+        self.prev_rates = np.zeros(3)
+        self.prev_z_vel = 0.0
 
         # Initialize dynamic occupancy grid map and planner
         from hierarchical_drone.utils.a_star import AStarPlanner
@@ -670,34 +791,71 @@ class HierarchicalNavEnv(gym.Env):
                     yaw_rate_cmd = self.smoothed_action[3] * self.action_cfg.yaw_rate_max
                     
                     cur_vel = s[10:13]
+                    tracking_err = float(np.linalg.norm(cur_pos - self.pos_ref))
+                    roll_pitch_err = float(abs(s[7]) + abs(s[8]))
                     vel_cmd = self.mpc.compute_control(
                         cur_pos, cur_vel, target_wp,
                         obstacle_density=obs_density,
                         target_distance=dist_to_target,
                         velocity_magnitude=vel_mag,
                         waypoint_curvature=wp_curvature,
+                        tracking_error=tracking_err,
+                        wind_magnitude=self.current_wind_magnitude,
+                        attitude_error=roll_pitch_err,
                         adaptive=self.use_adaptive_mpc
                     )
             else:
                 vel_cmd, yaw_rate_cmd = self._action_to_vel_cmd(action)
 
-        motor_action = np.ones((1, 4), dtype=np.float32) * self.drone_cfg.hover_rpm
+        motor_action = np.ones((1, 4), dtype=np.float32) * self.hover_rpm
         step_energy = 0.0
 
         for _ in range(self.rl_every_n):
             self.control_step_counter += 1
             self._apply_wind_disturbance()
 
-            # Randomize motor efficiencies before execution
-            if self.domain_randomization:
-                applied_motor_action = np.copy(motor_action)
-                applied_motor_action[0, :] = np.clip(
-                    motor_action[0, :] * self.motor_efficiencies,
-                    self.drone_cfg.min_rpm,
-                    self.drone_cfg.max_rpm
-                )
+            # Disturbance Recovery Mode Detection
+            imu_acc = np.linalg.norm([
+                self.last_imu_readings.get("ax", 0.0),
+                self.last_imu_readings.get("ay", 0.0),
+                self.last_imu_readings.get("az", 0.0)
+            ]) if hasattr(self, "last_imu_readings") else 0.0
+            rpy_rates_diff = float(np.linalg.norm(s[13:16] - self.prev_rates)) / self.ctrl_dt
+            self.prev_rates = np.copy(s[13:16])
+            
+            # Anomaly trigger: acceleration > 18 m/s^2 or angular acceleration > 25 rad/s^2
+            if imu_acc > 18.0 or rpy_rates_diff > 25.0:
+                self.disturbance_recovery_counter = int(2.0 * self.sim_cfg.ctrl_freq) # 2 seconds of recovery mode
+                
+            if self.disturbance_recovery_counter > 0:
+                self.disturbance_recovery_counter -= 1
+                # Recovery Mode overrides:
+                # 1. Target gains locked to 1.0
+                self.target_gain_scale_pos = 1.0
+                self.target_gain_scale_att = 1.0
+                # 2. MPC horizon locked to 30
+                if self.use_mpc_layer:
+                    self.mpc.current_horizon = 30.0
+                # 3. Damp Low-Level PID
+                self.stab_ctrl.deriv_alpha = 0.05 # heavily filter derivative (damped)
+                self.stab_ctrl.freeze_integrator = True # freeze integrator
             else:
-                applied_motor_action = motor_action
+                # Normal mode: restore derivative filtering
+                self.stab_ctrl.deriv_alpha = 0.25
+                self.stab_ctrl.freeze_integrator = False
+
+            # Applied motor action with efficiencies and battery scale
+            applied_motor_action = np.copy(motor_action)
+            applied_motor_action[0, :] = np.clip(
+                motor_action[0, :] * self.motor_efficiencies * self.battery_scale,
+                self.drone_cfg.min_rpm,
+                self.drone_cfg.max_rpm
+            )
+            
+            # Motor command latency buffer queue
+            self.motor_action_queue.append(applied_motor_action)
+            if len(self.motor_action_queue) > self.motor_latency_steps:
+                applied_motor_action = self.motor_action_queue.popleft()
 
             state, _, terminated, truncated, _ = self.env.step(applied_motor_action)
             s = state[0]
@@ -732,127 +890,39 @@ class HierarchicalNavEnv(gym.Env):
             self.distance_traveled += step_dist
             self.prev_pos_for_dist = s[0:3].copy()
 
-            # 1. PID Schedulers
-            if self.use_rl_gain_scheduler and (self.control_step_counter % self.sim_cfg.ctrl_freq == 0):
-                # Update learned PID gain scales every 1 second of simulation time
-                omega_mag = float(np.linalg.norm(s[13:16]))
-                obs_prox = min(ultra["front"], ultra["left"], ultra["right"], ultra["rear"], ultra["down"])
-                tracking_err = float(np.linalg.norm(s[0:3] - self.pos_ref))
-                wp_err = float(np.linalg.norm(s[0:3] - target_wp_astar))
-
-                # Compute derivatives
-                tracking_error_dot = (tracking_err - self.prev_tracking_error) / 1.0
-                waypoint_error_dot = (wp_err - self.prev_waypoint_error) / 1.0
-                reward_dot = (self.ep_reward - self.prev_reward) / 1.0
-                self.prev_reward = self.ep_reward
-
-                energy_rate = self.energy_sec
-                jerk_val = np.mean(self.jerk_estimates_sec) if self.jerk_estimates_sec else 0.0
-                horizon_val = float(self.mpc.last_horizon) if self.use_mpc_layer else 20.0
-                q_scale_val = float(self.mpc.last_q_scale) if self.use_mpc_layer else 1.0
-                r_scale_val = float(self.mpc.last_r_scale) if self.use_mpc_layer else 1.0
-
-                # Compile 17-dimensional scheduler state vector
-                state_arr = np.array([
-                    self._norm(vel_mag, 3.0),
-                    self._norm(omega_mag, 5.0),
-                    self._norm(dist_to_target, 5.0),
-                    self._norm(self.current_wind_magnitude, 3.0),
-                    self._norm(obs_prox, self.sensor_cfg.ultrasonic_max_range),
-                    self._norm(tracking_err, 1.0),
-                    self._norm(wp_err, 1.0),
-                    self._norm(tracking_error_dot, 1.0),
-                    self._norm(waypoint_error_dot, 1.0),
-                    self._norm(reward_dot, 10.0),
-                    self._norm(energy_rate, 50.0),
-                    self._norm(jerk_val, 10.0),
-                    self._norm(self.gain_scale_pos, 2.0),
-                    self._norm(self.gain_scale_att, 2.0),
-                    self._norm(horizon_val, 30.0),
-                    self._norm(q_scale_val, 5.0),
-                    self._norm(r_scale_val, 5.0)
-                ], dtype=np.float32)
-
-                gain_scale_pos, gain_scale_att = self.rl_gain_scheduler.get_gain_scale(
-                    state_arr=state_arr,
-                    deterministic=self.evaluation_mode
-                )
-                self.target_gain_scale_pos = gain_scale_pos
-                self.target_gain_scale_att = gain_scale_att
-
-                # Redesigned scheduler reward
-                tracking_error_reduction = self.prev_tracking_error - tracking_err
-                waypoint_error_reduction = self.prev_waypoint_error - wp_err
-
-                # Overshoot penalty
-                path_vector = self.target - self.start_pos
-                path_len = np.linalg.norm(path_vector)
-                if path_len > 1e-6:
-                    unit_path = path_vector / path_len
-                    proj = np.dot(s[0:3] - self.start_pos, unit_path)
-                    overshoot_val = max(0.0, proj - path_len)
-                else:
-                    overshoot_val = 0.0
-                overshoot_penalty = overshoot_val
-
-                jerk_penalty = jerk_val
-                energy_penalty = energy_rate
-
-                # Oscillation penalty
-                osc_val = abs(gain_scale_pos - self.prev_gain_scale_pos) + abs(gain_scale_att - self.prev_gain_scale_att)
-                self.oscillation_index += osc_val
-                oscillation_penalty = osc_val
-
-                reward_scheduler = (
-                    3.0 * tracking_error_reduction
-                    + 2.0 * waypoint_error_reduction
-                    - 2.0 * overshoot_penalty
-                    - 1.5 * jerk_penalty
-                    - 1.5 * energy_penalty
-                    - 1.0 * oscillation_penalty
-                )
-
-                self.last_scheduler_reward = reward_scheduler
-                self.last_overshoot_penalty = overshoot_penalty
-                self.last_jerk_penalty = jerk_penalty
-                self.last_energy_penalty = energy_penalty
-                self.last_oscillation_penalty = oscillation_penalty
-                self.last_state_arr_for_scheduler = state_arr
-
-                if not self.evaluation_mode:
-                    self.rl_gain_scheduler.save_reward_and_done(reward_scheduler, False)
-
-                self.prev_tracking_error = tracking_err
-                self.prev_waypoint_error = wp_err
-                self.prev_gain_scale_pos = gain_scale_pos
-                self.prev_gain_scale_att = gain_scale_att
-
-                self.jerk_estimates_sec = []
-                self.energy_sec = 0.0
-
-            elif self.use_adaptive_scheduler and not self.use_rl_gain_scheduler and (self.control_step_counter % self.sim_cfg.ctrl_freq == 0):
+            # PID Heuristic Scheduler (only when not recovery mode)
+            if self.disturbance_recovery_counter <= 0 and self.use_adaptive_scheduler and (self.control_step_counter % self.sim_cfg.ctrl_freq == 0):
                 # Run default heuristic gain scheduler
                 omega_mag = float(np.linalg.norm(s[13:16]))
-                self.target_gain_scale_pos = self.scheduler.get_gain_scale(
+                gain_predicted = self.scheduler.get_gain_scale(
                     velocity_mag=vel_mag,
                     angular_rate_mag=omega_mag,
                     distance_to_target=dist_to_target,
                     wind_disturbance_mag=self.current_wind_magnitude
                 )
+                # Heuristic temporal smoothing: gain_new = 0.9 * gain_prev + 0.1 * gain_predicted
+                self.target_gain_scale_pos = 0.9 * self.target_gain_scale_pos + 0.1 * gain_predicted
                 self.target_gain_scale_att = self.target_gain_scale_pos
 
-            # Interpolate gains at each control step for smooth transitions (alpha_gain = 0.05)
-            alpha_gain = 0.05
-            self.gain_scale_pos = alpha_gain * self.target_gain_scale_pos + (1.0 - alpha_gain) * self.gain_scale_pos
-            self.gain_scale_att = alpha_gain * self.target_gain_scale_att + (1.0 - alpha_gain) * self.gain_scale_att
+            # Rate limit the gain jumps to 5% per control cycle (120 Hz)
+            max_gain_jump = 0.05
+            
+            diff_pos = self.target_gain_scale_pos - self.gain_scale_pos
+            self.gain_scale_pos += np.clip(diff_pos, -max_gain_jump, max_gain_jump)
+            
+            diff_att = self.target_gain_scale_att - self.gain_scale_att
+            self.gain_scale_att += np.clip(diff_att, -max_gain_jump, max_gain_jump)
 
             # Apply gain scales to Low-level controller
             self.stab_ctrl.P_COEFF_FOR = self.P_COEFF_FOR_BASE * self.gain_scale_pos
             self.stab_ctrl.I_COEFF_FOR = self.I_COEFF_FOR_BASE * self.gain_scale_pos
             self.stab_ctrl.D_COEFF_FOR = self.D_COEFF_FOR_BASE * self.gain_scale_pos
-            self.stab_ctrl.P_COEFF_TOR = self.P_COEFF_TOR_BASE * self.gain_scale_att
+            
+            # Detune attitude gains dynamically to compensate for motor latency delay (delay = 0-3 steps)
+            latency_scale = 1.0 - 0.15 * self.motor_latency_steps
+            self.stab_ctrl.P_COEFF_TOR = self.P_COEFF_TOR_BASE * self.gain_scale_att * latency_scale
             self.stab_ctrl.I_COEFF_TOR = self.I_COEFF_TOR_BASE * self.gain_scale_att
-            self.stab_ctrl.D_COEFF_TOR = self.D_COEFF_TOR_BASE * self.gain_scale_att
+            self.stab_ctrl.D_COEFF_TOR = self.D_COEFF_TOR_BASE * self.gain_scale_att * latency_scale
 
             # 2. Get inner step targets
             if self.step_count <= self.takeoff_steps:
@@ -869,15 +939,21 @@ class HierarchicalNavEnv(gym.Env):
                 else:
                     target_wp_inner = target_wp_astar_inner
                 
+                tracking_err_inner = float(np.linalg.norm(cur_pos_inner - self.pos_ref))
+                roll_pitch_err_inner = float(abs(s[7]) + abs(s[8]))
                 vel_cmd_mpc = self.mpc.compute_control(
                     cur_pos_inner, cur_vel_inner, target_wp_inner,
                     obstacle_density=obs_density,
                     target_distance=dist_to_target,
                     velocity_magnitude=vel_mag,
                     waypoint_curvature=wp_curvature,
+                    tracking_error=tracking_err_inner,
+                    wind_magnitude=self.current_wind_magnitude,
+                    attitude_error=roll_pitch_err_inner,
                     adaptive=self.use_adaptive_mpc
                 )
-                ramp = float(np.clip(self.step_count / max(1, self.takeoff_steps), 0.10, 1.0))
+                # Keep takeoff velocity unscaled to ensure quick climb at takeoff under very low velocity limits
+                ramp = float(np.clip(self.step_count / max(1, self.takeoff_steps), 0.80, 1.0))
                 mixed_vel = vel_cmd_mpc * ramp
             else:
                 if self.step_count <= self.takeoff_steps:
@@ -902,7 +978,8 @@ class HierarchicalNavEnv(gym.Env):
                     guide_vel = guide_dir * guide_speed
                     guide_vel[2] = float(np.clip(guide_vel[2], -self.action_cfg.vz_max, self.action_cfg.vz_max))
 
-                ramp = float(np.clip(self.step_count / max(1, self.takeoff_steps), 0.10, 1.0))
+                # Keep takeoff velocity unscaled to ensure quick climb at takeoff under very low velocity limits
+                ramp = float(np.clip(self.step_count / max(1, self.takeoff_steps), 0.80, 1.0))
                 mixed_vel = (1.0 - self.guidance_blend) * vel_cmd + self.guidance_blend * guide_vel
                 mixed_vel *= ramp
 
@@ -935,6 +1012,30 @@ class HierarchicalNavEnv(gym.Env):
             mixed_vel[0] = np.clip(mixed_vel[0], -self.action_cfg.vxy_max, self.action_cfg.vxy_max)
             mixed_vel[1] = np.clip(mixed_vel[1], -self.action_cfg.vxy_max, self.action_cfg.vxy_max)
             mixed_vel[2] = np.clip(mixed_vel[2], -self.action_cfg.vz_max, self.action_cfg.vz_max)
+
+            # Safety Filter Blending
+            roll_val = abs(s[7])
+            pitch_val = abs(s[8])
+            vel_val = float(np.linalg.norm(s[10:13]))
+            rpm_val = float(np.max(self.last_applied_rpm))
+            
+            # Calculate safety score based on margins
+            alpha_roll = np.clip((roll_val - np.deg2rad(20.0)) / np.deg2rad(15.0), 0.0, 1.0)
+            alpha_pitch = np.clip((pitch_val - np.deg2rad(20.0)) / np.deg2rad(15.0), 0.0, 1.0)
+            alpha_vel = np.clip((vel_val - 0.25) / 0.20, 0.0, 1.0)
+            alpha_rpm = np.clip((rpm_val - 21000.0) / 4000.0, 0.0, 1.0)
+            
+            alpha_safe = float(max(alpha_roll, alpha_pitch, alpha_vel, alpha_rpm))
+            
+            if alpha_safe > 0.0:
+                # Conservative safe/recovery velocity command: brake horizontally, maintain vertical climb
+                vel_cmd_safe = np.zeros(3, dtype=np.float32)
+                dist_to_tar_inner = float(np.linalg.norm(self.target - s[0:3]))
+                if dist_to_tar_inner > 0.1:
+                    vel_cmd_safe[0:2] = 0.05 * (self.target[0:2] - s[0:2]) / dist_to_tar_inner
+                vel_cmd_safe[2] = mixed_vel[2]  # Maintain the climb command to avoid sinking
+                # Blend policy command with conservative recovery command
+                mixed_vel = (1.0 - alpha_safe) * mixed_vel + alpha_safe * vel_cmd_safe
 
             self.nav_cmd_lpf = 0.95 * self.nav_cmd_lpf + 0.05 * mixed_vel
             target_vel = np.array([self.nav_cmd_lpf[0], self.nav_cmd_lpf[1], self.nav_cmd_lpf[2]], dtype=np.float32)
@@ -1007,9 +1108,40 @@ class HierarchicalNavEnv(gym.Env):
         effort_pen = -0.01 * np.linalg.norm(vel_cmd)
         vel_stability = -0.015 * np.linalg.norm(vel)
 
-        reward = progress_reward + target_bonus + proximity_pen + tilt_pen + rate_pen + smooth_pen + effort_pen + vel_stability
+        # Redesigned Reward Penalties and Bonuses
+        jerk_val = np.mean(self.jerk_estimates_sec) if self.jerk_estimates_sec else 0.0
+        jerk_pen = -0.005 * jerk_val
+        
+        min_rpm = self.drone_cfg.min_rpm
+        max_rpm = self.drone_cfg.max_rpm
+        sat_factor = np.mean([max(0.0, (rpm - (max_rpm - 1000)) / 1000.0) + max(0.0, ((min_rpm + 1000) - rpm) / 1000.0) for rpm in self.last_applied_rpm])
+        saturation_pen = -0.10 * sat_factor
+        
+        oscillation_pen = -0.05 * np.linalg.norm(rates - getattr(self, "prev_reward_rates", rates))
+        self.prev_reward_rates = np.copy(rates)
+        
+        stable_hover_bonus = 0.0
+        if dist_xy < self.task_cfg.target_threshold_m:
+            vel_mag = np.linalg.norm(vel)
+            if vel_mag < 0.20:
+                stable_hover_bonus = 3.0 * (1.0 - vel_mag / 0.20)
 
-        # Phase 5: Subtract energy consumption penalty
+        reward = (
+            progress_reward 
+            + target_bonus 
+            + proximity_pen 
+            + tilt_pen 
+            + rate_pen 
+            + smooth_pen 
+            + effort_pen 
+            + vel_stability
+            + jerk_pen
+            + saturation_pen
+            + oscillation_pen
+            + stable_hover_bonus
+        )
+
+        # Subtract energy consumption penalty
         reward -= self.energy_lambda * step_energy
         self.last_reward = reward
 
@@ -1045,11 +1177,7 @@ class HierarchicalNavEnv(gym.Env):
 
         self.prev_dist = dist_xy
 
-        # Buffer step reward done flag for PPO gain scheduler
-        if done and self.use_rl_gain_scheduler and not self.evaluation_mode:
-            if hasattr(self, "rl_gain_scheduler") and self.rl_gain_scheduler is not None:
-                if len(self.rl_gain_scheduler.dones) > 0:
-                    self.rl_gain_scheduler.dones[-1] = 1.0
+
 
         info: Dict[str, float] = {
             "distance": dist,
@@ -1168,9 +1296,7 @@ class HierarchicalNavEnv(gym.Env):
             info["gain_pos_var"] = float(np.var(self.gain_pos_history)) if self.gain_pos_history else 0.0
             info["gain_att_var"] = float(np.var(self.gain_att_history)) if self.gain_att_history else 0.0
 
-            # Update the RLGainScheduler policy gradient at the end of the episode
-            if self.use_rl_gain_scheduler and not self.evaluation_mode:
-                self.rl_gain_scheduler.update_policy()
+
 
         # Handle history stacking for next observations
         if self.use_history:

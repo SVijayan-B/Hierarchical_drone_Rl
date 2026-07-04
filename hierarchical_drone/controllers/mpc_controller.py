@@ -42,9 +42,9 @@ class MPCController:
             self.C_dict[h] = C_h
 
         # Performance constraints
-        self.vxy_max = 0.08
-        self.vz_max = 0.08
-        self.a_max = 2.0  # m/s^2
+        self.vxy_max = 0.18
+        self.vz_max = 0.18
+        self.a_max = 3.5  # m/s^2
 
         # Logs of adaptive values
         self.last_horizon = self.N
@@ -77,6 +77,9 @@ class MPCController:
         target_distance: float = 0.0,
         velocity_magnitude: float = 0.0,
         waypoint_curvature: float = 0.0,
+        tracking_error: float = 0.0,
+        wind_magnitude: float = 0.0,
+        attitude_error: float = 0.0,
         adaptive: bool = True
     ) -> np.ndarray:
         """Computes the optimal desired velocity vector toward a target waypoint.
@@ -97,6 +100,12 @@ class MPCController:
             Current drone speed.
         waypoint_curvature : float
             Curvature of the path waypoints.
+        tracking_error : float
+            Current tracking error magnitude.
+        wind_magnitude : float
+            Current wind disturbance magnitude.
+        attitude_error : float
+            Sum of absolute roll and pitch errors.
         adaptive : bool
             Whether to use adaptive horizons and cost weight scaling.
 
@@ -114,12 +123,19 @@ class MPCController:
             self.last_target_horizon_logged = self.N
             self.last_actual_horizon_logged = self.N
         else:
-            if obstacle_density < 0.05:
-                target_horizon = 10
-            elif obstacle_density < 0.20:
-                target_horizon = 20
-            else:
+            # Upgrade 4: Horizon selection rules
+            if wind_magnitude > 0.015:  # Wind disturbance
                 target_horizon = 30
+            elif tracking_error > 0.4:  # High tracking error
+                target_horizon = 30
+            elif obstacle_density > 0.15:  # Near obstacles
+                target_horizon = 30
+            elif velocity_magnitude > 0.10:  # High speed
+                target_horizon = 20
+            elif target_distance < 0.8:  # Near goal
+                target_horizon = 10
+            else:
+                target_horizon = 20  # Nominal
 
             self.last_target_horizon_logged = target_horizon
 
@@ -143,11 +159,11 @@ class MPCController:
             self.switching_frequency = self.switch_count / self.step_counter
 
             # 2. Adaptive Cost Weights
-            # Increase tracking weight near obstacles (scale Q position weights)
-            q_pos_scale = 1.0 + 4.0 * min(1.0, obstacle_density / 0.3)
+            # Increase tracking weight near obstacles or under high tracking/attitude error
+            q_pos_scale = 1.0 + 5.0 * min(1.0, obstacle_density / 0.3) + 3.0 * min(1.0, tracking_error / 0.5)
             
-            # Increase smoothness weight at high velocity (scale R control weights)
-            r_scale = 1.0 + 3.0 * min(1.0, velocity_magnitude / 0.15)
+            # Increase smoothness weight at high velocity
+            r_scale = 1.0 + 4.0 * min(1.0, velocity_magnitude / 0.18)
 
         self.last_horizon = N
         self.last_q_scale = q_pos_scale

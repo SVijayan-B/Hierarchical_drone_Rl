@@ -12,48 +12,55 @@ from hierarchical_drone.env.hierarchical_nav_env import HierarchicalNavEnv
 from hierarchical_drone.rl.transformer_feature_extractor import TransformerFeatureExtractor
 
 
-class SchedulerCallback(BaseCallback):
-    def __init__(self, out_dir: str, save_freq: int = 20_000, verbose: int = 0):
+def linear_schedule(initial_value: float):
+    def func(progress_remaining: float) -> float:
+        return progress_remaining * initial_value
+    return func
+
+
+class CurriculumCallback(BaseCallback):
+    def __init__(self, total_timesteps: int, verbose: int = 0):
         super().__init__(verbose)
-        self.out_dir = out_dir
-        self.save_freq = save_freq
+        self.total_timesteps = total_timesteps
+        self.current_phase = 1
 
     def _on_step(self) -> bool:
-        # Checkpoint save
-        if self.n_calls % self.save_freq == 0:
-            envs = self.training_env.envs
-            for idx, env in enumerate(envs):
-                real_env = env.unwrapped
-                if hasattr(real_env, "rl_gain_scheduler") and real_env.rl_gain_scheduler is not None:
-                    checkpoint_dir = os.path.join(self.out_dir, "checkpoints")
-                    os.makedirs(checkpoint_dir, exist_ok=True)
-                    path = os.path.join(checkpoint_dir, f"scheduler_checkpoint_{self.n_calls}.pt")
-                    real_env.rl_gain_scheduler.save(path)
-                    if self.verbose > 0:
-                        print(f"[INFO] Saved scheduler checkpoint to {path}")
+        steps = self.model.num_timesteps
+        pct = steps / max(1, self.total_timesteps)
+        
+        # Linearly decay entropy coefficient from 0.01 to 0.0
+        self.model.ent_coef = max(0.0, (1.0 - pct) * 0.01)
 
-        # Sync best scheduler state
-        best_model_path = os.path.join(self.out_dir, "best", "best_model.zip")
-        if os.path.exists(best_model_path):
-            envs = self.training_env.envs
-            for env in envs:
-                real_env = env.unwrapped
-                if hasattr(real_env, "rl_gain_scheduler") and real_env.rl_gain_scheduler is not None:
-                    best_dir = os.path.join(self.out_dir, "best")
-                    os.makedirs(best_dir, exist_ok=True)
-                    path = os.path.join(best_dir, "scheduler_best.pt")
-                    real_env.rl_gain_scheduler.save(path)
+        # 5 curriculum phases split evenly
+        if pct < 0.20:
+            phase = 1
+        elif pct < 0.40:
+            phase = 2
+        elif pct < 0.60:
+            phase = 3
+        elif pct < 0.80:
+            phase = 4
+        else:
+            phase = 5
+            
+        if phase != self.current_phase:
+            self.current_phase = phase
+            print(f"\n[CurriculumCallback] Transitioned to Curriculum Phase {phase} ({steps}/{self.total_timesteps} steps, {pct*100:.1f}%)")
+            
+        for env in self.training_env.envs:
+            env.unwrapped.curriculum_phase = phase
+            
         return True
 
 
 def make_env(
     gui: bool = False,
     use_history: bool = False,
-    use_rl_gain_scheduler: bool = False,
     use_mpc_layer: bool = False,
     use_adaptive_mpc: bool = False,
     domain_randomization: bool = False,
-    demo_guided_mode: bool = False
+    demo_guided_mode: bool = False,
+    use_robust_obs: bool = True
 ):
     def _thunk():
         env = HierarchicalNavEnv(
@@ -62,11 +69,12 @@ def make_env(
             sensor_cfg=SensorConfig(),
             action_cfg=ActionConfig(),
             use_history=use_history,
-            use_rl_gain_scheduler=use_rl_gain_scheduler,
+            use_rl_gain_scheduler=False,
             use_mpc_layer=use_mpc_layer,
             use_adaptive_mpc=use_adaptive_mpc,
             domain_randomization=domain_randomization,
-            demo_guided_mode=demo_guided_mode
+            demo_guided_mode=demo_guided_mode,
+            use_robust_obs=use_robust_obs
         )
         return Monitor(env)
 
@@ -74,13 +82,14 @@ def make_env(
 
 
 def train(
-    total_timesteps: int = 500_000,
+    total_timesteps: int = 1500_000,
     run_name: str = None,
     policy_type: str = "mlp",
-    use_rl_gain_scheduler: bool = False,
     use_mpc_layer: bool = False,
     use_adaptive_mpc: bool = False,
-    domain_randomization: bool = True
+    domain_randomization: bool = True,
+    use_robust_obs: bool = True,
+    gui: bool = False
 ):
     run_name = run_name or datetime.now().strftime(f"run_{policy_type}_%Y%m%d_%H%M%S")
     out_dir = os.path.join("results_hierarchical", run_name)
@@ -90,27 +99,28 @@ def train(
 
     vec_env = DummyVecEnv([
         make_env(
-            gui=False,
+            gui=gui,
             use_history=use_history,
-            use_rl_gain_scheduler=use_rl_gain_scheduler,
             use_mpc_layer=use_mpc_layer,
             use_adaptive_mpc=use_adaptive_mpc,
             domain_randomization=domain_randomization,
-            demo_guided_mode=False
+            demo_guided_mode=False,
+            use_robust_obs=use_robust_obs
         )
     ])
     vec_env = VecNormalize(vec_env, norm_obs=True, norm_reward=True, clip_obs=10.0)
 
     # For evaluation, we disable domain randomization for consistency in tracking metrics
+    # But we still keep robust observations to match the policy input shape
     eval_env = DummyVecEnv([
         make_env(
             gui=False,
             use_history=use_history,
-            use_rl_gain_scheduler=use_rl_gain_scheduler,
             use_mpc_layer=use_mpc_layer,
             use_adaptive_mpc=use_adaptive_mpc,
             domain_randomization=False,
-            demo_guided_mode=False
+            demo_guided_mode=False,
+            use_robust_obs=use_robust_obs
         )
     ])
     eval_env = VecNormalize(eval_env, norm_obs=True, norm_reward=False, clip_obs=10.0, training=False)
@@ -122,6 +132,9 @@ def train(
             "features_extractor_kwargs": {"features_dim": 128},
         }
 
+    # Linear decay schedule for learning rate
+    lr_schedule = linear_schedule(3e-4)
+
     model = PPO(
         policy="MlpPolicy",
         env=vec_env,
@@ -130,7 +143,9 @@ def train(
         batch_size=256,
         gamma=0.995,
         gae_lambda=0.95,
-        learning_rate=3e-4,
+        learning_rate=lr_schedule,
+        ent_coef=0.01,
+        max_grad_norm=0.5,
         policy_kwargs=policy_kwargs,
         tensorboard_log=os.path.join(out_dir, "tb"),
     )
@@ -148,22 +163,12 @@ def train(
         deterministic=True,
     )
     
-    callbacks = [checkpoint_cb, eval_cb]
-    if use_rl_gain_scheduler:
-        scheduler_cb = SchedulerCallback(out_dir=out_dir, save_freq=20_000, verbose=1)
-        callbacks.append(scheduler_cb)
+    curriculum_cb = CurriculumCallback(total_timesteps=total_timesteps, verbose=1)
+    callbacks = [checkpoint_cb, eval_cb, curriculum_cb]
 
     model.learn(total_timesteps=total_timesteps, callback=callbacks)
 
     model.save(os.path.join(out_dir, "final_model"))
-    if use_rl_gain_scheduler:
-        envs = vec_env.envs
-        for idx, env in enumerate(envs):
-            real_env = env.unwrapped
-            if hasattr(real_env, "rl_gain_scheduler") and real_env.rl_gain_scheduler is not None:
-                path = os.path.join(out_dir, "scheduler_final.pt")
-                real_env.rl_gain_scheduler.save(path)
-                print(f"[INFO] Saved final scheduler to {path}")
 
     vec_env.save(os.path.join(out_dir, "vecnormalize.pkl"))
     vec_env.close()
@@ -172,21 +177,22 @@ def train(
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(description="Train PPO policy (MLP or Transformer)")
-    parser.add_argument("--timesteps", type=int, default=500_000)
+    parser.add_argument("--timesteps", type=int, default=1500_000)
     parser.add_argument("--policy_type", type=str, choices=["mlp", "transformer"], default="mlp")
     parser.add_argument("--run_name", type=str, default=None)
-    parser.add_argument("--use_rl_gain_scheduler", action="store_true", help="Enable PPO PID gain scheduler")
     parser.add_argument("--use_mpc_layer", action="store_true", help="Enable MPC path tracking layer")
     parser.add_argument("--use_adaptive_mpc", action="store_true", help="Enable adaptive horizon switching in MPC")
     parser.add_argument("--no_domain_randomization", action="store_true", help="Disable domain randomization")
+    parser.add_argument("--gui", action="store_true", help="Enable GUI visualization during training")
     args = parser.parse_args()
     
     train(
         total_timesteps=args.timesteps,
         run_name=args.run_name,
         policy_type=args.policy_type,
-        use_rl_gain_scheduler=args.use_rl_gain_scheduler,
         use_mpc_layer=args.use_mpc_layer,
         use_adaptive_mpc=args.use_adaptive_mpc,
-        domain_randomization=not args.no_domain_randomization
+        domain_randomization=not args.no_domain_randomization,
+        use_robust_obs=True,
+        gui=args.gui
     )

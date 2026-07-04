@@ -24,7 +24,8 @@ def make_eval_env(
     use_adaptive_mpc=False,
     use_history=False,
     domain_randomization=False,
-    telemetry_dir=None
+    telemetry_dir=None,
+    use_robust_obs=True
 ):
     def _thunk():
         return HierarchicalNavEnv(
@@ -39,7 +40,8 @@ def make_eval_env(
             use_adaptive_mpc=use_adaptive_mpc,
             use_history=use_history,
             domain_randomization=domain_randomization,
-            telemetry_dir=telemetry_dir
+            telemetry_dir=telemetry_dir,
+            use_robust_obs=use_robust_obs
         )
 
     return _thunk
@@ -58,6 +60,12 @@ def run_compare(model_path, vecnorm_path, cfg: CompareConfig, trans_model_path=N
 
     # 1. Load PPO MLP Model
     model_mlp = PPO.load(model_path)
+    
+    # Auto-detect use_robust_obs based on model observation space shape
+    mlp_shape = model_mlp.observation_space.shape[0]
+    use_robust_obs = (mlp_shape == 27)
+    print(f"Auto-detected use_robust_obs: {use_robust_obs} (MLP shape: {mlp_shape})")
+    
     model_trans = None
 
     # 2. Auto-detect or load PPO Transformer Model
@@ -177,7 +185,8 @@ def run_compare(model_path, vecnorm_path, cfg: CompareConfig, trans_model_path=N
             use_adaptive_mpc=use_adaptive_mpc,
             use_history=use_history,
             domain_randomization=domain_rand_enabled,
-            telemetry_dir=out_dir
+            telemetry_dir=out_dir,
+            use_robust_obs=use_robust_obs
         )
 
         vec_env = DummyVecEnv([raw_env_fn])

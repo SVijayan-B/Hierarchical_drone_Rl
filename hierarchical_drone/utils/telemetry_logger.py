@@ -101,9 +101,11 @@ class TelemetryLogger:
             "target_z": float(env.target[2]),
             "pos_error": pos_error,
             "target_error": target_error,
-            # Gains
-            "gain_scale_pos": float(env.gain_scale_pos),
-            "gain_scale_att": float(env.gain_scale_att),
+            # Physical / Domain Parameters
+            "drone_mass": float(env.env.M),
+            "latency_steps": float(env.motor_latency_steps),
+            "drag_coeff_mean": float(np.mean(env.env.DRAG_COEFF)),
+            "hover_rpm": float(env.hover_rpm),
             "kp_pos_x": float(env.stab_ctrl.P_COEFF_FOR[0]),
             "kp_pos_y": float(env.stab_ctrl.P_COEFF_FOR[1]),
             "kp_pos_z": float(env.stab_ctrl.P_COEFF_FOR[2]),
