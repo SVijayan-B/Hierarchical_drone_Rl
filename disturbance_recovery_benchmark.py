@@ -62,33 +62,42 @@ def main():
     parser.add_argument("--rounds", type=int, default=3)
     parser.add_argument("--gui", action="store_true")
     parser.add_argument("--seed", type=int, default=11)
+    parser.add_argument("--model", type=str, default=None, help="Path to PPO MLP model zip")
+    parser.add_argument("--vecnorm", type=str, default=None, help="Path to MLP vecnormalize pkl")
+    parser.add_argument("--trans_model", type=str, default=None, help="Path to Transformer PPO model zip")
+    parser.add_argument("--trans_vecnorm", type=str, default=None, help="Path to Transformer vecnormalize pkl")
     args = parser.parse_args()
 
-    default_run = os.path.join("results_hierarchical", "run_20260513_112909")
-    model_mlp_path = os.path.join(default_run, "final_model.zip")
-    vecnorm_mlp_path = os.path.join(default_run, "vecnormalize.pkl")
+    model_mlp_path = args.model
+    vecnorm_mlp_path = args.vecnorm
+    trans_model_path = args.trans_model
+    trans_vecnorm_path = args.trans_vecnorm
 
-    if not os.path.exists(model_mlp_path):
-        # Auto-detect latest run in results_hierarchical
-        runs = glob.glob(os.path.join("results_hierarchical", "run_*"))
-        if runs:
-            runs.sort()
-            model_mlp_path = os.path.join(runs[-1], "final_model.zip")
-            vecnorm_mlp_path = os.path.join(runs[-1], "vecnormalize.pkl")
-        else:
-            raise FileNotFoundError("Could not find baseline PPO MLP model.")
+    if not model_mlp_path:
+        default_run = os.path.join("results_hierarchical", "run_20260513_112909")
+        model_mlp_path = os.path.join(default_run, "final_model.zip")
+        vecnorm_mlp_path = os.path.join(default_run, "vecnormalize.pkl")
 
-    # Auto-detect transformer model
-    trans_model_path = None
-    trans_vecnorm_path = None
-    trans_runs = glob.glob(os.path.join("results_hierarchical", "*trans*"))
-    if trans_runs:
-        trans_runs.sort()
-        latest_trans_run = trans_runs[-1]
-        best_model = os.path.join(latest_trans_run, "best", "best_model.zip")
-        final_model = os.path.join(latest_trans_run, "final_model.zip")
-        trans_model_path = best_model if os.path.exists(best_model) else final_model
-        trans_vecnorm_path = os.path.join(latest_trans_run, "vecnormalize.pkl")
+        if not os.path.exists(model_mlp_path):
+            # Auto-detect latest run in results_hierarchical
+            runs = glob.glob(os.path.join("results_hierarchical", "run_*"))
+            if runs:
+                runs.sort()
+                model_mlp_path = os.path.join(runs[-1], "final_model.zip")
+                vecnorm_mlp_path = os.path.join(runs[-1], "vecnormalize.pkl")
+            else:
+                raise FileNotFoundError("Could not find baseline PPO MLP model.")
+
+    if not trans_model_path:
+        # Auto-detect transformer model
+        trans_runs = glob.glob(os.path.join("results_hierarchical", "*trans*"))
+        if trans_runs:
+            trans_runs.sort()
+            latest_trans_run = trans_runs[-1]
+            best_model = os.path.join(latest_trans_run, "best", "best_model.zip")
+            final_model = os.path.join(latest_trans_run, "final_model.zip")
+            trans_model_path = best_model if os.path.exists(best_model) else final_model
+            trans_vecnorm_path = os.path.join(latest_trans_run, "vecnormalize.pkl")
 
     # Load policies
     model_mlp = PPO.load(model_mlp_path)
