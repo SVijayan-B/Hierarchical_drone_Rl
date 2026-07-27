@@ -88,9 +88,9 @@ def main():
             else:
                 raise FileNotFoundError("Could not find baseline PPO MLP model.")
 
+    trans_runs = glob.glob(os.path.join("results_hierarchical", "*trans*"))
     if not trans_model_path:
         # Auto-detect transformer model
-        trans_runs = glob.glob(os.path.join("results_hierarchical", "*trans*"))
         if trans_runs:
             trans_runs.sort()
             latest_trans_run = trans_runs[-1]
