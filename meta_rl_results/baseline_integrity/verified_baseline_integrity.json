@@ -1,0 +1,26 @@
+{
+  "results_hierarchical/run_mlp_obs_dist/final_model.zip": {
+    "verified": true,
+    "sha256_hash": "a689adc36dfebab4bde383f55e6b85e94f127ff4a2b39d73c2be58a121f2374b",
+    "file_size_bytes": 177174,
+    "timestamp": "2026-09-16 17:08:25"
+  },
+  "results_hierarchical/run_mlp_obs_dist/vecnormalize.pkl": {
+    "verified": true,
+    "sha256_hash": "b05bd3fbf520e175959ebf1931d6c923669a5ff38a89b1a8fca49fb8e729576b",
+    "file_size_bytes": 2118,
+    "timestamp": "2026-09-16 17:08:25"
+  },
+  "results_hierarchical/run_trans_obs_dist/final_model.zip": {
+    "verified": true,
+    "sha256_hash": "808c7d885aa688a3ffec55881109212322301f2a5cbc20a7ceea296c988647c4",
+    "file_size_bytes": 1359859,
+    "timestamp": "2026-09-16 17:08:25"
+  },
+  "results_hierarchical/run_trans_obs_dist/vecnormalize.pkl": {
+    "verified": true,
+    "sha256_hash": "9a1ff06505e8c4a0f031f05ebb1d9a0138b6b803c6f3791373350596547faefa",
+    "file_size_bytes": 21797,
+    "timestamp": "2026-09-16 17:08:25"
+  }
+}

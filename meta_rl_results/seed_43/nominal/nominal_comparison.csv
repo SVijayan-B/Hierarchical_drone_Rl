@@ -1,0 +1,3 @@
+model,success,rmse,energy,return,delta_c_l2
+Baseline,0.0,1.5985,6038.83,-31.3976,0.000000
+MCR-UAV,0.0,1.8992,6038.42,-31.1585,2.200870

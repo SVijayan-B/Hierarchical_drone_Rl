@@ -1,0 +1,73 @@
+# MCR-UAV Evaluation Protocol Configuration
+# Version: 1.0.0
+# Governing Standard: IEEE Research Formulation (Phase 2 & Phase 5)
+
+metadata:
+  project: MCR-UAV
+  description: Formal Meta-Train / Validation / OOD Test Evaluation Protocol
+  version: 1.0.0
+  author: Antigravity AI Research Engineer
+
+reproducibility:
+  global_seed: 42
+  statistical_seed_count: 5
+
+splits:
+  train:
+    task_count: 80
+    episodes_per_task: 1
+    adaptation_budget: 0
+    max_episode_steps: 60
+    description: In-distribution Meta-Training tasks
+
+  validation:
+    task_count: 20
+    episodes_per_task: 1
+    adaptation_budget: 0
+    max_episode_steps: 60
+    description: In-distribution Meta-Validation tasks for model selection
+
+  ood_test:
+    task_count: 30
+    episodes_per_task: 1
+    adaptation_budget: 0
+    max_episode_steps: 60
+    description: Out-of-Distribution Meta-Test tasks strictly frozen for final evaluation
+
+evaluation:
+  deterministic: true
+  success_threshold_m: 0.60
+  hover_time_required_sec: 3.0
+  evaluation_horizon_sec: 6.0
+  confidence_interval_level: 0.95
+  statistical_significance_alpha: 0.05
+
+adaptation_protocol:
+  supported_budgets: [0, 1, 5, 10, 20]
+  default_budget: 0
+  metrics:
+    - pre_adaptation_performance
+    - post_adaptation_performance
+    - performance_delta
+    - adaptation_efficiency
+    - recovery_time_sec
+    - steps_to_threshold
+
+baseline_checkpoints:
+  mlp:
+    model_path: results_hierarchical/run_mlp_obs_dist/final_model.zip
+    vecnorm_path: results_hierarchical/run_mlp_obs_dist/vecnormalize.pkl
+    use_history: false
+    obs_dim: 25
+    use_mpc: true
+    use_adaptive_scheduler: true
+
+  transformer:
+    model_path: results_hierarchical/run_trans_obs_dist/final_model.zip
+    vecnorm_path: results_hierarchical/run_trans_obs_dist/vecnormalize.pkl
+    use_history: true
+    history_len: 20
+    history_obs_dim: 34
+    flattened_dim: 680
+    use_mpc: true
+    use_adaptive_scheduler: true

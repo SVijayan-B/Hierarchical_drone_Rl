@@ -1,0 +1,4130 @@
+{
+  "train": [
+    {
+      "task_id": "train_task_001",
+      "seed": 1042,
+      "split": "train",
+      "wind_magnitude": 0.894,
+      "wind_direction": [
+        -0.6924,
+        0.7171,
+        0.0795
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.99,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 0.946,
+      "inertia_scale": 1.046,
+      "waypoint_seed": 10042,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_002",
+      "seed": 1043,
+      "split": "train",
+      "wind_magnitude": 0.418,
+      "wind_direction": [
+        0.7968,
+        0.5948,
+        -0.1064
+      ],
+      "gust_magnitude": 1.299,
+      "gust_frequency": 0.713,
+      "turbulence_std": 0.089,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.11,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.109,
+      "inertia_scale": 0.994,
+      "waypoint_seed": 10043,
+      "compound_disturbance_flags": {
+        "has_wind": false,
+        "has_gusts": true,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_003",
+      "seed": 1044,
+      "split": "train",
+      "wind_magnitude": 0.012,
+      "wind_direction": [
+        0.5558,
+        -0.6852,
+        -0.4706
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 2.849,
+      "impulse_duration": 0.1,
+      "impulse_onset": 3.06,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.098,
+      "inertia_scale": 1.064,
+      "waypoint_seed": 10044,
+      "compound_disturbance_flags": {
+        "has_wind": false,
+        "has_gusts": false,
+        "has_impulse": true,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_004",
+      "seed": 1045,
+      "split": "train",
+      "wind_magnitude": 0.848,
+      "wind_direction": [
+        -0.3147,
+        0.9215,
+        0.2278
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.62,
+      "sensor_noise_scale": 1.755,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.037,
+      "inertia_scale": 0.987,
+      "waypoint_seed": 10045,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": true,
+        "has_motor_degradation": false,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "train_task_005",
+      "seed": 1046,
+      "split": "train",
+      "wind_magnitude": 0.088,
+      "wind_direction": [
+        0.3822,
+        -0.9098,
+        0.1616
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.44,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.078,
+      "degraded_motors": [
+        1
+      ],
+      "mass_scale": 1.118,
+      "inertia_scale": 1.064,
+      "waypoint_seed": 10046,
+      "compound_disturbance_flags": {
+        "has_wind": false,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": true,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_006",
+      "seed": 1047,
+      "split": "train",
+      "wind_magnitude": 1.383,
+      "wind_direction": [
+        -0.8769,
+        0.4465,
+        -0.1779
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.64,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.096,
+      "inertia_scale": 0.968,
+      "waypoint_seed": 10047,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_007",
+      "seed": 1048,
+      "split": "train",
+      "wind_magnitude": 1.821,
+      "wind_direction": [
+        0.6583,
+        0.6063,
+        0.4461
+      ],
+      "gust_magnitude": 0.327,
+      "gust_frequency": 1.576,
+      "turbulence_std": 0.015,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 1.55,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 0.906,
+      "inertia_scale": 0.996,
+      "waypoint_seed": 10048,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": true,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_008",
+      "seed": 1049,
+      "split": "train",
+      "wind_magnitude": 0.258,
+      "wind_direction": [
+        -0.9165,
+        -0.2789,
+        0.2867
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 2.459,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.35,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.031,
+      "inertia_scale": 1.014,
+      "waypoint_seed": 10049,
+      "compound_disturbance_flags": {
+        "has_wind": false,
+        "has_gusts": false,
+        "has_impulse": true,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_009",
+      "seed": 1050,
+      "split": "train",
+      "wind_magnitude": 0.5,
+      "wind_direction": [
+        -0.2574,
+        0.8291,
+        0.4964
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 1.67,
+      "sensor_noise_scale": 1.293,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.095,
+      "inertia_scale": 1.126,
+      "waypoint_seed": 10050,
+      "compound_disturbance_flags": {
+        "has_wind": false,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": true,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_010",
+      "seed": 1051,
+      "split": "train",
+      "wind_magnitude": 0.771,
+      "wind_direction": [
+        0.3003,
+        0.9006,
+        -0.3141
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 1.88,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.179,
+      "degraded_motors": [
+        0
+      ],
+      "mass_scale": 1.119,
+      "inertia_scale": 1.117,
+      "waypoint_seed": 10051,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": true,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "train_task_011",
+      "seed": 1052,
+      "split": "train",
+      "wind_magnitude": 0.704,
+      "wind_direction": [
+        -0.9896,
+        0.1143,
+        -0.0875
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 3.37,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.123,
+      "inertia_scale": 0.939,
+      "waypoint_seed": 10052,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_012",
+      "seed": 1053,
+      "split": "train",
+      "wind_magnitude": 2.113,
+      "wind_direction": [
+        -0.3255,
+        0.8834,
+        0.3372
+      ],
+      "gust_magnitude": 0.208,
+      "gust_frequency": 1.701,
+      "turbulence_std": 0.05,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.73,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.076,
+      "inertia_scale": 1.132,
+      "waypoint_seed": 10053,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": true,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_013",
+      "seed": 1054,
+      "split": "train",
+      "wind_magnitude": 0.026,
+      "wind_direction": [
+        0.3413,
+        -0.9398,
+        -0.0197
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 2.464,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.3,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 0.94,
+      "inertia_scale": 1.111,
+      "waypoint_seed": 10054,
+      "compound_disturbance_flags": {
+        "has_wind": false,
+        "has_gusts": false,
+        "has_impulse": true,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_014",
+      "seed": 1055,
+      "split": "train",
+      "wind_magnitude": 0.798,
+      "wind_direction": [
+        0.8407,
+        0.5345,
+        0.0872
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.3,
+      "sensor_noise_scale": 1.001,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 0.992,
+      "inertia_scale": 0.964,
+      "waypoint_seed": 10055,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_015",
+      "seed": 1056,
+      "split": "train",
+      "wind_magnitude": 0.922,
+      "wind_direction": [
+        0.717,
+        0.6958,
+        -0.0413
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.67,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.186,
+      "degraded_motors": [
+        1,
+        0
+      ],
+      "mass_scale": 1.046,
+      "inertia_scale": 1.027,
+      "waypoint_seed": 10056,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": true,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "train_task_016",
+      "seed": 1057,
+      "split": "train",
+      "wind_magnitude": 0.998,
+      "wind_direction": [
+        -0.9815,
+        0.0648,
+        -0.1803
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 1.85,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 0.994,
+      "inertia_scale": 1.083,
+      "waypoint_seed": 10057,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_017",
+      "seed": 1058,
+      "split": "train",
+      "wind_magnitude": 0.109,
+      "wind_direction": [
+        0.5451,
+        0.838,
+        -0.0263
+      ],
+      "gust_magnitude": 1.185,
+      "gust_frequency": 1.229,
+      "turbulence_std": 0.133,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.2,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 0.998,
+      "inertia_scale": 0.901,
+      "waypoint_seed": 10058,
+      "compound_disturbance_flags": {
+        "has_wind": false,
+        "has_gusts": true,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_018",
+      "seed": 1059,
+      "split": "train",
+      "wind_magnitude": 0.451,
+      "wind_direction": [
+        -0.4586,
+        0.8859,
+        -0.0702
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 1.628,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.68,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.136,
+      "inertia_scale": 1.085,
+      "waypoint_seed": 10059,
+      "compound_disturbance_flags": {
+        "has_wind": false,
+        "has_gusts": false,
+        "has_impulse": true,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_019",
+      "seed": 1060,
+      "split": "train",
+      "wind_magnitude": 0.985,
+      "wind_direction": [
+        0.7715,
+        0.4683,
+        0.4306
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.39,
+      "sensor_noise_scale": 1.233,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 0.924,
+      "inertia_scale": 0.979,
+      "waypoint_seed": 10060,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": true,
+        "has_motor_degradation": false,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "train_task_020",
+      "seed": 1061,
+      "split": "train",
+      "wind_magnitude": 0.616,
+      "wind_direction": [
+        -0.9305,
+        -0.2999,
+        -0.2104
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.0,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.046,
+      "degraded_motors": [
+        2
+      ],
+      "mass_scale": 0.952,
+      "inertia_scale": 0.922,
+      "waypoint_seed": 10061,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": true,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "train_task_021",
+      "seed": 1062,
+      "split": "train",
+      "wind_magnitude": 1.633,
+      "wind_direction": [
+        0.4404,
+        0.8552,
+        0.2732
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.21,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.126,
+      "inertia_scale": 0.909,
+      "waypoint_seed": 10062,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_022",
+      "seed": 1063,
+      "split": "train",
+      "wind_magnitude": 2.405,
+      "wind_direction": [
+        0.3217,
+        -0.9234,
+        -0.2094
+      ],
+      "gust_magnitude": 1.429,
+      "gust_frequency": 1.182,
+      "turbulence_std": 0.091,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 3.23,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 0.919,
+      "inertia_scale": 1.112,
+      "waypoint_seed": 10063,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": true,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_023",
+      "seed": 1064,
+      "split": "train",
+      "wind_magnitude": 0.258,
+      "wind_direction": [
+        -0.8457,
+        0.3888,
+        -0.3656
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 1.123,
+      "impulse_duration": 0.1,
+      "impulse_onset": 1.74,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 0.967,
+      "inertia_scale": 0.967,
+      "waypoint_seed": 10064,
+      "compound_disturbance_flags": {
+        "has_wind": false,
+        "has_gusts": false,
+        "has_impulse": true,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_024",
+      "seed": 1065,
+      "split": "train",
+      "wind_magnitude": 0.998,
+      "wind_direction": [
+        0.2699,
+        0.8953,
+        0.3543
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.91,
+      "sensor_noise_scale": 1.488,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 0.923,
+      "inertia_scale": 1.011,
+      "waypoint_seed": 10065,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": true,
+        "has_motor_degradation": false,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "train_task_025",
+      "seed": 1066,
+      "split": "train",
+      "wind_magnitude": 0.416,
+      "wind_direction": [
+        -0.4579,
+        -0.7512,
+        -0.4755
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.23,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.198,
+      "degraded_motors": [
+        2,
+        1
+      ],
+      "mass_scale": 1.014,
+      "inertia_scale": 1.149,
+      "waypoint_seed": 10066,
+      "compound_disturbance_flags": {
+        "has_wind": false,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": true,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_026",
+      "seed": 1067,
+      "split": "train",
+      "wind_magnitude": 2.304,
+      "wind_direction": [
+        0.8307,
+        -0.2541,
+        -0.4954
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.65,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.033,
+      "inertia_scale": 0.992,
+      "waypoint_seed": 10067,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_027",
+      "seed": 1068,
+      "split": "train",
+      "wind_magnitude": 2.035,
+      "wind_direction": [
+        0.1039,
+        -0.9345,
+        -0.3404
+      ],
+      "gust_magnitude": 0.773,
+      "gust_frequency": 0.871,
+      "turbulence_std": 0.022,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 3.08,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.096,
+      "inertia_scale": 1.134,
+      "waypoint_seed": 10068,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": true,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_028",
+      "seed": 1069,
+      "split": "train",
+      "wind_magnitude": 0.995,
+      "wind_direction": [
+        0.8273,
+        -0.4393,
+        -0.3502
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 1.497,
+      "impulse_duration": 0.1,
+      "impulse_onset": 3.15,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.047,
+      "inertia_scale": 1.09,
+      "waypoint_seed": 10069,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": true,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "train_task_029",
+      "seed": 1070,
+      "split": "train",
+      "wind_magnitude": 0.224,
+      "wind_direction": [
+        0.9027,
+        -0.1332,
+        -0.4092
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.78,
+      "sensor_noise_scale": 1.695,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.011,
+      "inertia_scale": 0.933,
+      "waypoint_seed": 10070,
+      "compound_disturbance_flags": {
+        "has_wind": false,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": true,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_030",
+      "seed": 1071,
+      "split": "train",
+      "wind_magnitude": 0.241,
+      "wind_direction": [
+        0.6729,
+        -0.6861,
+        -0.2765
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 3.4,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.08,
+      "degraded_motors": [
+        0,
+        1
+      ],
+      "mass_scale": 1.109,
+      "inertia_scale": 1.014,
+      "waypoint_seed": 10071,
+      "compound_disturbance_flags": {
+        "has_wind": false,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": true,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_031",
+      "seed": 1072,
+      "split": "train",
+      "wind_magnitude": 1.297,
+      "wind_direction": [
+        -0.3715,
+        -0.8405,
+        0.3944
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.37,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.032,
+      "inertia_scale": 1.028,
+      "waypoint_seed": 10072,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_032",
+      "seed": 1073,
+      "split": "train",
+      "wind_magnitude": 0.811,
+      "wind_direction": [
+        0.8879,
+        -0.4479,
+        0.1046
+      ],
+      "gust_magnitude": 0.884,
+      "gust_frequency": 1.145,
+      "turbulence_std": 0.07,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.98,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 0.975,
+      "inertia_scale": 0.984,
+      "waypoint_seed": 10073,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": true,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_033",
+      "seed": 1074,
+      "split": "train",
+      "wind_magnitude": 1.0,
+      "wind_direction": [
+        -0.5382,
+        0.6867,
+        0.4887
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 2.67,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.52,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 0.991,
+      "inertia_scale": 0.972,
+      "waypoint_seed": 10074,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": true,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "train_task_034",
+      "seed": 1075,
+      "split": "train",
+      "wind_magnitude": 0.787,
+      "wind_direction": [
+        0.9131,
+        -0.1545,
+        -0.3774
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.02,
+      "sensor_noise_scale": 1.203,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 0.985,
+      "inertia_scale": 1.08,
+      "waypoint_seed": 10075,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": true,
+        "has_motor_degradation": false,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "train_task_035",
+      "seed": 1076,
+      "split": "train",
+      "wind_magnitude": 0.37,
+      "wind_direction": [
+        0.1841,
+        0.918,
+        0.3513
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.52,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.179,
+      "degraded_motors": [
+        0,
+        1
+      ],
+      "mass_scale": 0.977,
+      "inertia_scale": 1.021,
+      "waypoint_seed": 10076,
+      "compound_disturbance_flags": {
+        "has_wind": false,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": true,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_036",
+      "seed": 1077,
+      "split": "train",
+      "wind_magnitude": 2.308,
+      "wind_direction": [
+        0.9032,
+        0.3273,
+        -0.2776
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.92,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.143,
+      "inertia_scale": 1.087,
+      "waypoint_seed": 10077,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_037",
+      "seed": 1078,
+      "split": "train",
+      "wind_magnitude": 2.237,
+      "wind_direction": [
+        0.5072,
+        0.7675,
+        -0.392
+      ],
+      "gust_magnitude": 0.574,
+      "gust_frequency": 1.197,
+      "turbulence_std": 0.038,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.38,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 0.908,
+      "inertia_scale": 1.099,
+      "waypoint_seed": 10078,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": true,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_038",
+      "seed": 1079,
+      "split": "train",
+      "wind_magnitude": 0.942,
+      "wind_direction": [
+        0.8054,
+        -0.3632,
+        0.4684
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 1.632,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.61,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.038,
+      "inertia_scale": 1.015,
+      "waypoint_seed": 10079,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": true,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "train_task_039",
+      "seed": 1080,
+      "split": "train",
+      "wind_magnitude": 0.907,
+      "wind_direction": [
+        0.6125,
+        -0.7881,
+        0.0612
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.45,
+      "sensor_noise_scale": 1.998,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 0.989,
+      "inertia_scale": 1.143,
+      "waypoint_seed": 10080,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": true,
+        "has_motor_degradation": false,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "train_task_040",
+      "seed": 1081,
+      "split": "train",
+      "wind_magnitude": 0.445,
+      "wind_direction": [
+        0.8917,
+        -0.4189,
+        -0.1713
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 1.97,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.231,
+      "degraded_motors": [
+        3
+      ],
+      "mass_scale": 0.94,
+      "inertia_scale": 1.138,
+      "waypoint_seed": 10081,
+      "compound_disturbance_flags": {
+        "has_wind": false,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": true,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_041",
+      "seed": 1082,
+      "split": "train",
+      "wind_magnitude": 1.736,
+      "wind_direction": [
+        -0.5655,
+        0.814,
+        -0.133
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 3.06,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.014,
+      "inertia_scale": 0.959,
+      "waypoint_seed": 10082,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_042",
+      "seed": 1083,
+      "split": "train",
+      "wind_magnitude": 1.01,
+      "wind_direction": [
+        0.352,
+        -0.821,
+        -0.4495
+      ],
+      "gust_magnitude": 0.132,
+      "gust_frequency": 1.391,
+      "turbulence_std": 0.055,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 3.06,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.06,
+      "inertia_scale": 0.91,
+      "waypoint_seed": 10083,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": true,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_043",
+      "seed": 1084,
+      "split": "train",
+      "wind_magnitude": 0.842,
+      "wind_direction": [
+        0.9275,
+        0.3172,
+        0.198
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 1.072,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.81,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 0.924,
+      "inertia_scale": 0.909,
+      "waypoint_seed": 10084,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": true,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "train_task_044",
+      "seed": 1085,
+      "split": "train",
+      "wind_magnitude": 0.852,
+      "wind_direction": [
+        -0.9404,
+        0.2582,
+        0.2211
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.52,
+      "sensor_noise_scale": 1.634,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 0.936,
+      "inertia_scale": 1.005,
+      "waypoint_seed": 10085,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": true,
+        "has_motor_degradation": false,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "train_task_045",
+      "seed": 1086,
+      "split": "train",
+      "wind_magnitude": 0.834,
+      "wind_direction": [
+        0.5619,
+        0.7689,
+        0.3049
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 3.47,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.149,
+      "degraded_motors": [
+        0,
+        2
+      ],
+      "mass_scale": 1.023,
+      "inertia_scale": 0.914,
+      "waypoint_seed": 10086,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": true,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "train_task_046",
+      "seed": 1087,
+      "split": "train",
+      "wind_magnitude": 1.214,
+      "wind_direction": [
+        0.9041,
+        0.4199,
+        -0.0788
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 1.59,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.033,
+      "inertia_scale": 1.103,
+      "waypoint_seed": 10087,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_047",
+      "seed": 1088,
+      "split": "train",
+      "wind_magnitude": 1.42,
+      "wind_direction": [
+        0.8989,
+        0.2244,
+        0.3764
+      ],
+      "gust_magnitude": 0.482,
+      "gust_frequency": 1.743,
+      "turbulence_std": 0.024,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.0,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.13,
+      "inertia_scale": 0.974,
+      "waypoint_seed": 10088,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": true,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_048",
+      "seed": 1089,
+      "split": "train",
+      "wind_magnitude": 0.098,
+      "wind_direction": [
+        0.2746,
+        -0.9562,
+        0.1016
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 1.34,
+      "impulse_duration": 0.1,
+      "impulse_onset": 3.14,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 0.964,
+      "inertia_scale": 1.041,
+      "waypoint_seed": 10089,
+      "compound_disturbance_flags": {
+        "has_wind": false,
+        "has_gusts": false,
+        "has_impulse": true,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_049",
+      "seed": 1090,
+      "split": "train",
+      "wind_magnitude": 0.677,
+      "wind_direction": [
+        0.4673,
+        0.8669,
+        -0.1735
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.87,
+      "sensor_noise_scale": 1.108,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.147,
+      "inertia_scale": 1.067,
+      "waypoint_seed": 10090,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_050",
+      "seed": 1091,
+      "split": "train",
+      "wind_magnitude": 0.077,
+      "wind_direction": [
+        0.5653,
+        0.824,
+        0.0393
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 1.65,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.207,
+      "degraded_motors": [
+        3,
+        2
+      ],
+      "mass_scale": 0.984,
+      "inertia_scale": 0.951,
+      "waypoint_seed": 10091,
+      "compound_disturbance_flags": {
+        "has_wind": false,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": true,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_051",
+      "seed": 1092,
+      "split": "train",
+      "wind_magnitude": 0.051,
+      "wind_direction": [
+        -0.7481,
+        0.6507,
+        -0.1305
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 3.48,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.036,
+      "inertia_scale": 0.924,
+      "waypoint_seed": 10092,
+      "compound_disturbance_flags": {
+        "has_wind": false,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_052",
+      "seed": 1093,
+      "split": "train",
+      "wind_magnitude": 1.868,
+      "wind_direction": [
+        -0.9313,
+        -0.2381,
+        0.2757
+      ],
+      "gust_magnitude": 0.898,
+      "gust_frequency": 1.022,
+      "turbulence_std": 0.13,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.47,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.032,
+      "inertia_scale": 1.129,
+      "waypoint_seed": 10093,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": true,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_053",
+      "seed": 1094,
+      "split": "train",
+      "wind_magnitude": 0.731,
+      "wind_direction": [
+        0.189,
+        0.9222,
+        -0.3374
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 2.734,
+      "impulse_duration": 0.1,
+      "impulse_onset": 1.58,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 0.942,
+      "inertia_scale": 1.098,
+      "waypoint_seed": 10094,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": true,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "train_task_054",
+      "seed": 1095,
+      "split": "train",
+      "wind_magnitude": 0.46,
+      "wind_direction": [
+        -0.2975,
+        0.935,
+        -0.1932
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 1.55,
+      "sensor_noise_scale": 1.648,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 0.992,
+      "inertia_scale": 1.061,
+      "waypoint_seed": 10095,
+      "compound_disturbance_flags": {
+        "has_wind": false,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": true,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_055",
+      "seed": 1096,
+      "split": "train",
+      "wind_magnitude": 0.962,
+      "wind_direction": [
+        0.7591,
+        -0.5941,
+        -0.2661
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 3.45,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.155,
+      "degraded_motors": [
+        1
+      ],
+      "mass_scale": 0.965,
+      "inertia_scale": 1.103,
+      "waypoint_seed": 10096,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": true,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "train_task_056",
+      "seed": 1097,
+      "split": "train",
+      "wind_magnitude": 1.153,
+      "wind_direction": [
+        -0.958,
+        -0.112,
+        -0.2641
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 1.66,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.15,
+      "inertia_scale": 1.057,
+      "waypoint_seed": 10097,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_057",
+      "seed": 1098,
+      "split": "train",
+      "wind_magnitude": 1.296,
+      "wind_direction": [
+        -0.6401,
+        0.6432,
+        0.4202
+      ],
+      "gust_magnitude": 0.799,
+      "gust_frequency": 1.583,
+      "turbulence_std": 0.138,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 3.17,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 0.93,
+      "inertia_scale": 1.06,
+      "waypoint_seed": 10098,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": true,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_058",
+      "seed": 1099,
+      "split": "train",
+      "wind_magnitude": 0.058,
+      "wind_direction": [
+        -0.954,
+        -0.2917,
+        0.0692
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 2.314,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.65,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 0.955,
+      "inertia_scale": 1.126,
+      "waypoint_seed": 10099,
+      "compound_disturbance_flags": {
+        "has_wind": false,
+        "has_gusts": false,
+        "has_impulse": true,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_059",
+      "seed": 1100,
+      "split": "train",
+      "wind_magnitude": 0.194,
+      "wind_direction": [
+        0.1631,
+        0.9576,
+        0.2374
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 1.51,
+      "sensor_noise_scale": 1.211,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.038,
+      "inertia_scale": 0.974,
+      "waypoint_seed": 10100,
+      "compound_disturbance_flags": {
+        "has_wind": false,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": true,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_060",
+      "seed": 1101,
+      "split": "train",
+      "wind_magnitude": 0.888,
+      "wind_direction": [
+        0.8536,
+        0.408,
+        0.3239
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 3.29,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.119,
+      "degraded_motors": [
+        1
+      ],
+      "mass_scale": 1.115,
+      "inertia_scale": 1.124,
+      "waypoint_seed": 10101,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": true,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "train_task_061",
+      "seed": 1102,
+      "split": "train",
+      "wind_magnitude": 1.359,
+      "wind_direction": [
+        0.8934,
+        0.3065,
+        0.3286
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.11,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.01,
+      "inertia_scale": 0.932,
+      "waypoint_seed": 10102,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_062",
+      "seed": 1103,
+      "split": "train",
+      "wind_magnitude": 0.571,
+      "wind_direction": [
+        -0.0356,
+        -0.9957,
+        0.0859
+      ],
+      "gust_magnitude": 0.265,
+      "gust_frequency": 1.769,
+      "turbulence_std": 0.078,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 1.64,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.105,
+      "inertia_scale": 1.1,
+      "waypoint_seed": 10103,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": true,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_063",
+      "seed": 1104,
+      "split": "train",
+      "wind_magnitude": 0.072,
+      "wind_direction": [
+        0.9838,
+        0.0777,
+        0.1618
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 2.486,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.48,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 0.91,
+      "inertia_scale": 0.927,
+      "waypoint_seed": 10104,
+      "compound_disturbance_flags": {
+        "has_wind": false,
+        "has_gusts": false,
+        "has_impulse": true,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_064",
+      "seed": 1105,
+      "split": "train",
+      "wind_magnitude": 0.653,
+      "wind_direction": [
+        -0.9831,
+        -0.1818,
+        -0.0234
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.32,
+      "sensor_noise_scale": 1.768,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.005,
+      "inertia_scale": 1.027,
+      "waypoint_seed": 10105,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": true,
+        "has_motor_degradation": false,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "train_task_065",
+      "seed": 1106,
+      "split": "train",
+      "wind_magnitude": 0.783,
+      "wind_direction": [
+        0.7776,
+        -0.5364,
+        -0.328
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.29,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.15,
+      "degraded_motors": [
+        0,
+        3
+      ],
+      "mass_scale": 1.136,
+      "inertia_scale": 1.086,
+      "waypoint_seed": 10106,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": true,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "train_task_066",
+      "seed": 1107,
+      "split": "train",
+      "wind_magnitude": 1.832,
+      "wind_direction": [
+        -0.9394,
+        -0.0451,
+        -0.34
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.75,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.115,
+      "inertia_scale": 1.075,
+      "waypoint_seed": 10107,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_067",
+      "seed": 1108,
+      "split": "train",
+      "wind_magnitude": 1.078,
+      "wind_direction": [
+        -0.74,
+        -0.5942,
+        -0.3151
+      ],
+      "gust_magnitude": 1.002,
+      "gust_frequency": 1.489,
+      "turbulence_std": 0.001,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 1.55,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.083,
+      "inertia_scale": 1.034,
+      "waypoint_seed": 10108,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": true,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_068",
+      "seed": 1109,
+      "split": "train",
+      "wind_magnitude": 0.438,
+      "wind_direction": [
+        0.1623,
+        0.8662,
+        -0.4726
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 2.506,
+      "impulse_duration": 0.1,
+      "impulse_onset": 1.66,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.029,
+      "inertia_scale": 1.112,
+      "waypoint_seed": 10109,
+      "compound_disturbance_flags": {
+        "has_wind": false,
+        "has_gusts": false,
+        "has_impulse": true,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_069",
+      "seed": 1110,
+      "split": "train",
+      "wind_magnitude": 0.488,
+      "wind_direction": [
+        -0.9337,
+        -0.3575,
+        0.0208
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 1.51,
+      "sensor_noise_scale": 1.756,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.138,
+      "inertia_scale": 0.94,
+      "waypoint_seed": 10110,
+      "compound_disturbance_flags": {
+        "has_wind": false,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": true,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_070",
+      "seed": 1111,
+      "split": "train",
+      "wind_magnitude": 0.859,
+      "wind_direction": [
+        -0.5527,
+        -0.8332,
+        -0.0191
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.82,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.133,
+      "degraded_motors": [
+        2
+      ],
+      "mass_scale": 0.914,
+      "inertia_scale": 1.002,
+      "waypoint_seed": 10111,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": true,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "train_task_071",
+      "seed": 1112,
+      "split": "train",
+      "wind_magnitude": 1.469,
+      "wind_direction": [
+        -0.9012,
+        -0.2224,
+        0.3719
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.64,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 0.991,
+      "inertia_scale": 1.055,
+      "waypoint_seed": 10112,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_072",
+      "seed": 1113,
+      "split": "train",
+      "wind_magnitude": 2.434,
+      "wind_direction": [
+        0.8713,
+        0.2769,
+        0.4051
+      ],
+      "gust_magnitude": 1.028,
+      "gust_frequency": 1.194,
+      "turbulence_std": 0.101,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.97,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 0.954,
+      "inertia_scale": 1.099,
+      "waypoint_seed": 10113,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": true,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_073",
+      "seed": 1114,
+      "split": "train",
+      "wind_magnitude": 0.162,
+      "wind_direction": [
+        0.2765,
+        -0.961,
+        0.0014
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 2.562,
+      "impulse_duration": 0.1,
+      "impulse_onset": 3.08,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.079,
+      "inertia_scale": 0.95,
+      "waypoint_seed": 10114,
+      "compound_disturbance_flags": {
+        "has_wind": false,
+        "has_gusts": false,
+        "has_impulse": true,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_074",
+      "seed": 1115,
+      "split": "train",
+      "wind_magnitude": 0.232,
+      "wind_direction": [
+        -0.5737,
+        -0.8023,
+        -0.165
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 1.52,
+      "sensor_noise_scale": 1.693,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.136,
+      "inertia_scale": 1.13,
+      "waypoint_seed": 10115,
+      "compound_disturbance_flags": {
+        "has_wind": false,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": true,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_075",
+      "seed": 1116,
+      "split": "train",
+      "wind_magnitude": 0.936,
+      "wind_direction": [
+        -0.8411,
+        -0.5396,
+        0.0371
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 3.38,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.185,
+      "degraded_motors": [
+        1,
+        2
+      ],
+      "mass_scale": 1.116,
+      "inertia_scale": 1.016,
+      "waypoint_seed": 10116,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": true,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "train_task_076",
+      "seed": 1117,
+      "split": "train",
+      "wind_magnitude": 1.653,
+      "wind_direction": [
+        -0.1033,
+        -0.9503,
+        -0.2935
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.08,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.086,
+      "inertia_scale": 0.919,
+      "waypoint_seed": 10117,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_077",
+      "seed": 1118,
+      "split": "train",
+      "wind_magnitude": 0.946,
+      "wind_direction": [
+        0.5565,
+        -0.6698,
+        -0.4915
+      ],
+      "gust_magnitude": 0.014,
+      "gust_frequency": 0.686,
+      "turbulence_std": 0.09,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.84,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 0.916,
+      "inertia_scale": 1.08,
+      "waypoint_seed": 10118,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": true,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_078",
+      "seed": 1119,
+      "split": "train",
+      "wind_magnitude": 0.718,
+      "wind_direction": [
+        0.0345,
+        -0.9092,
+        0.415
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 1.194,
+      "impulse_duration": 0.1,
+      "impulse_onset": 3.35,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 0.98,
+      "inertia_scale": 1.133,
+      "waypoint_seed": 10119,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": true,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "train_task_079",
+      "seed": 1120,
+      "split": "train",
+      "wind_magnitude": 0.29,
+      "wind_direction": [
+        -0.8126,
+        -0.5785,
+        0.0709
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.91,
+      "sensor_noise_scale": 1.049,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.018,
+      "inertia_scale": 0.923,
+      "waypoint_seed": 10120,
+      "compound_disturbance_flags": {
+        "has_wind": false,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "train_task_080",
+      "seed": 1121,
+      "split": "train",
+      "wind_magnitude": 0.126,
+      "wind_direction": [
+        -0.398,
+        -0.7849,
+        0.4749
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.02,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.35,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.117,
+      "degraded_motors": [
+        2,
+        0
+      ],
+      "mass_scale": 0.92,
+      "inertia_scale": 1.1,
+      "waypoint_seed": 10121,
+      "compound_disturbance_flags": {
+        "has_wind": false,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": true,
+        "is_compound": false
+      }
+    }
+  ],
+  "val": [
+    {
+      "task_id": "val_task_001",
+      "seed": 2042,
+      "split": "val",
+      "wind_magnitude": 1.334,
+      "wind_direction": [
+        -0.256,
+        0.9184,
+        0.3017
+      ],
+      "gust_magnitude": 0.083,
+      "gust_frequency": 0.886,
+      "turbulence_std": 0.142,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 1.33,
+      "sensor_noise_scale": 1.49,
+      "motor_degradation": 0.114,
+      "degraded_motors": [
+        3,
+        2
+      ],
+      "mass_scale": 0.968,
+      "inertia_scale": 1.018,
+      "waypoint_seed": 20042,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": true,
+        "has_impulse": false,
+        "has_sensor_noise": true,
+        "has_motor_degradation": true,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "val_task_002",
+      "seed": 2043,
+      "split": "val",
+      "wind_magnitude": 2.096,
+      "wind_direction": [
+        -0.7892,
+        0.5829,
+        -0.1934
+      ],
+      "gust_magnitude": 0.937,
+      "gust_frequency": 1.042,
+      "turbulence_std": 0.088,
+      "impulse_magnitude": 2.612,
+      "impulse_duration": 0.1,
+      "impulse_onset": 1.07,
+      "sensor_noise_scale": 1.264,
+      "motor_degradation": 0.115,
+      "degraded_motors": [
+        0,
+        2
+      ],
+      "mass_scale": 1.063,
+      "inertia_scale": 1.097,
+      "waypoint_seed": 20043,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": true,
+        "has_impulse": true,
+        "has_sensor_noise": true,
+        "has_motor_degradation": true,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "val_task_003",
+      "seed": 2044,
+      "split": "val",
+      "wind_magnitude": 1.135,
+      "wind_direction": [
+        0.6766,
+        -0.6581,
+        -0.3304
+      ],
+      "gust_magnitude": 0.812,
+      "gust_frequency": 1.848,
+      "turbulence_std": 0.103,
+      "impulse_magnitude": 1.128,
+      "impulse_duration": 0.1,
+      "impulse_onset": 3.38,
+      "sensor_noise_scale": 1.673,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 0.981,
+      "inertia_scale": 1.019,
+      "waypoint_seed": 20044,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": true,
+        "has_impulse": true,
+        "has_sensor_noise": true,
+        "has_motor_degradation": false,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "val_task_004",
+      "seed": 2045,
+      "split": "val",
+      "wind_magnitude": 2.29,
+      "wind_direction": [
+        -0.9896,
+        0.0992,
+        0.1043
+      ],
+      "gust_magnitude": 0.912,
+      "gust_frequency": 1.907,
+      "turbulence_std": 0.025,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 3.58,
+      "sensor_noise_scale": 1.489,
+      "motor_degradation": 0.146,
+      "degraded_motors": [
+        2,
+        1
+      ],
+      "mass_scale": 1.018,
+      "inertia_scale": 0.962,
+      "waypoint_seed": 20045,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": true,
+        "has_impulse": false,
+        "has_sensor_noise": true,
+        "has_motor_degradation": true,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "val_task_005",
+      "seed": 2046,
+      "split": "val",
+      "wind_magnitude": 1.057,
+      "wind_direction": [
+        0.9742,
+        0.2255,
+        0.0084
+      ],
+      "gust_magnitude": 1.322,
+      "gust_frequency": 1.962,
+      "turbulence_std": 0.018,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 1.49,
+      "sensor_noise_scale": 1.479,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.098,
+      "inertia_scale": 0.93,
+      "waypoint_seed": 20046,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": true,
+        "has_impulse": false,
+        "has_sensor_noise": true,
+        "has_motor_degradation": false,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "val_task_006",
+      "seed": 2047,
+      "split": "val",
+      "wind_magnitude": 1.217,
+      "wind_direction": [
+        -0.9091,
+        -0.1919,
+        0.3697
+      ],
+      "gust_magnitude": 0.422,
+      "gust_frequency": 1.236,
+      "turbulence_std": 0.099,
+      "impulse_magnitude": 2.142,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.62,
+      "sensor_noise_scale": 1.351,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.034,
+      "inertia_scale": 0.919,
+      "waypoint_seed": 20047,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": true,
+        "has_impulse": true,
+        "has_sensor_noise": true,
+        "has_motor_degradation": false,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "val_task_007",
+      "seed": 2048,
+      "split": "val",
+      "wind_magnitude": 1.946,
+      "wind_direction": [
+        0.7171,
+        -0.642,
+        0.2712
+      ],
+      "gust_magnitude": 1.447,
+      "gust_frequency": 1.956,
+      "turbulence_std": 0.021,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 3.92,
+      "sensor_noise_scale": 1.65,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 0.91,
+      "inertia_scale": 1.044,
+      "waypoint_seed": 20048,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": true,
+        "has_impulse": false,
+        "has_sensor_noise": true,
+        "has_motor_degradation": false,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "val_task_008",
+      "seed": 2049,
+      "split": "val",
+      "wind_magnitude": 0.882,
+      "wind_direction": [
+        -0.9188,
+        0.3754,
+        -0.122
+      ],
+      "gust_magnitude": 0.029,
+      "gust_frequency": 1.625,
+      "turbulence_std": 0.146,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.68,
+      "sensor_noise_scale": 1.977,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 0.924,
+      "inertia_scale": 0.982,
+      "waypoint_seed": 20049,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": true,
+        "has_impulse": false,
+        "has_sensor_noise": true,
+        "has_motor_degradation": false,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "val_task_009",
+      "seed": 2050,
+      "split": "val",
+      "wind_magnitude": 2.117,
+      "wind_direction": [
+        0.8127,
+        -0.3661,
+        -0.4533
+      ],
+      "gust_magnitude": 0.049,
+      "gust_frequency": 1.053,
+      "turbulence_std": 0.125,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 1.66,
+      "sensor_noise_scale": 1.876,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.072,
+      "inertia_scale": 1.141,
+      "waypoint_seed": 20050,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": true,
+        "has_impulse": false,
+        "has_sensor_noise": true,
+        "has_motor_degradation": false,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "val_task_010",
+      "seed": 2051,
+      "split": "val",
+      "wind_magnitude": 1.416,
+      "wind_direction": [
+        -0.2314,
+        0.9533,
+        -0.1941
+      ],
+      "gust_magnitude": 0.391,
+      "gust_frequency": 1.933,
+      "turbulence_std": 0.078,
+      "impulse_magnitude": 1.067,
+      "impulse_duration": 0.1,
+      "impulse_onset": 3.12,
+      "sensor_noise_scale": 1.761,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.144,
+      "inertia_scale": 1.006,
+      "waypoint_seed": 20051,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": true,
+        "has_impulse": true,
+        "has_sensor_noise": true,
+        "has_motor_degradation": false,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "val_task_011",
+      "seed": 2052,
+      "split": "val",
+      "wind_magnitude": 0.938,
+      "wind_direction": [
+        -0.3436,
+        -0.9383,
+        -0.0388
+      ],
+      "gust_magnitude": 0.586,
+      "gust_frequency": 1.857,
+      "turbulence_std": 0.012,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 1.17,
+      "sensor_noise_scale": 1.638,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.108,
+      "inertia_scale": 0.94,
+      "waypoint_seed": 20052,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": true,
+        "has_impulse": false,
+        "has_sensor_noise": true,
+        "has_motor_degradation": false,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "val_task_012",
+      "seed": 2053,
+      "split": "val",
+      "wind_magnitude": 1.913,
+      "wind_direction": [
+        -0.3284,
+        -0.9323,
+        0.1516
+      ],
+      "gust_magnitude": 1.298,
+      "gust_frequency": 0.917,
+      "turbulence_std": 0.116,
+      "impulse_magnitude": 2.723,
+      "impulse_duration": 0.1,
+      "impulse_onset": 3.38,
+      "sensor_noise_scale": 1.602,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 0.96,
+      "inertia_scale": 1.037,
+      "waypoint_seed": 20053,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": true,
+        "has_impulse": true,
+        "has_sensor_noise": true,
+        "has_motor_degradation": false,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "val_task_013",
+      "seed": 2054,
+      "split": "val",
+      "wind_magnitude": 1.258,
+      "wind_direction": [
+        -0.9695,
+        0.1162,
+        -0.2159
+      ],
+      "gust_magnitude": 1.233,
+      "gust_frequency": 1.186,
+      "turbulence_std": 0.144,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 1.05,
+      "sensor_noise_scale": 1.254,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.132,
+      "inertia_scale": 1.083,
+      "waypoint_seed": 20054,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": true,
+        "has_impulse": false,
+        "has_sensor_noise": true,
+        "has_motor_degradation": false,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "val_task_014",
+      "seed": 2055,
+      "split": "val",
+      "wind_magnitude": 1.872,
+      "wind_direction": [
+        0.8826,
+        -0.0276,
+        -0.4693
+      ],
+      "gust_magnitude": 1.198,
+      "gust_frequency": 1.613,
+      "turbulence_std": 0.057,
+      "impulse_magnitude": 1.793,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.85,
+      "sensor_noise_scale": 1.995,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 0.911,
+      "inertia_scale": 0.981,
+      "waypoint_seed": 20055,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": true,
+        "has_impulse": true,
+        "has_sensor_noise": true,
+        "has_motor_degradation": false,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "val_task_015",
+      "seed": 2056,
+      "split": "val",
+      "wind_magnitude": 2.113,
+      "wind_direction": [
+        -0.8732,
+        0.0122,
+        -0.4872
+      ],
+      "gust_magnitude": 0.461,
+      "gust_frequency": 1.249,
+      "turbulence_std": 0.031,
+      "impulse_magnitude": 2.547,
+      "impulse_duration": 0.1,
+      "impulse_onset": 1.68,
+      "sensor_noise_scale": 1.572,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 0.979,
+      "inertia_scale": 0.984,
+      "waypoint_seed": 20056,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": true,
+        "has_impulse": true,
+        "has_sensor_noise": true,
+        "has_motor_degradation": false,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "val_task_016",
+      "seed": 2057,
+      "split": "val",
+      "wind_magnitude": 2.387,
+      "wind_direction": [
+        -0.4371,
+        0.8577,
+        -0.2707
+      ],
+      "gust_magnitude": 0.697,
+      "gust_frequency": 1.652,
+      "turbulence_std": 0.12,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.42,
+      "sensor_noise_scale": 1.559,
+      "motor_degradation": 0.16,
+      "degraded_motors": [
+        3,
+        2
+      ],
+      "mass_scale": 0.958,
+      "inertia_scale": 1.107,
+      "waypoint_seed": 20057,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": true,
+        "has_impulse": false,
+        "has_sensor_noise": true,
+        "has_motor_degradation": true,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "val_task_017",
+      "seed": 2058,
+      "split": "val",
+      "wind_magnitude": 1.479,
+      "wind_direction": [
+        -0.1832,
+        0.9822,
+        -0.0409
+      ],
+      "gust_magnitude": 0.48,
+      "gust_frequency": 0.624,
+      "turbulence_std": 0.061,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.39,
+      "sensor_noise_scale": 1.961,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.01,
+      "inertia_scale": 1.126,
+      "waypoint_seed": 20058,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": true,
+        "has_impulse": false,
+        "has_sensor_noise": true,
+        "has_motor_degradation": false,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "val_task_018",
+      "seed": 2059,
+      "split": "val",
+      "wind_magnitude": 0.699,
+      "wind_direction": [
+        0.6511,
+        -0.5773,
+        -0.4928
+      ],
+      "gust_magnitude": 1.349,
+      "gust_frequency": 1.673,
+      "turbulence_std": 0.124,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.5,
+      "sensor_noise_scale": 1.629,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 0.968,
+      "inertia_scale": 0.987,
+      "waypoint_seed": 20059,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": true,
+        "has_impulse": false,
+        "has_sensor_noise": true,
+        "has_motor_degradation": false,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "val_task_019",
+      "seed": 2060,
+      "split": "val",
+      "wind_magnitude": 2.452,
+      "wind_direction": [
+        0.2656,
+        -0.964,
+        0.0079
+      ],
+      "gust_magnitude": 0.46,
+      "gust_frequency": 0.639,
+      "turbulence_std": 0.072,
+      "impulse_magnitude": 2.599,
+      "impulse_duration": 0.1,
+      "impulse_onset": 1.01,
+      "sensor_noise_scale": 1.774,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.038,
+      "inertia_scale": 0.933,
+      "waypoint_seed": 20060,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": true,
+        "has_impulse": true,
+        "has_sensor_noise": true,
+        "has_motor_degradation": false,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "val_task_020",
+      "seed": 2061,
+      "split": "val",
+      "wind_magnitude": 0.383,
+      "wind_direction": [
+        -0.2892,
+        -0.9553,
+        0.0622
+      ],
+      "gust_magnitude": 0.844,
+      "gust_frequency": 1.251,
+      "turbulence_std": 0.12,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 3.38,
+      "sensor_noise_scale": 1.158,
+      "motor_degradation": 0.148,
+      "degraded_motors": [
+        1,
+        2
+      ],
+      "mass_scale": 1.107,
+      "inertia_scale": 1.102,
+      "waypoint_seed": 20061,
+      "compound_disturbance_flags": {
+        "has_wind": false,
+        "has_gusts": true,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": true,
+        "is_compound": false
+      }
+    }
+  ],
+  "ood_test": [
+    {
+      "task_id": "ood_test_task_001",
+      "seed": 3042,
+      "split": "ood_test",
+      "wind_magnitude": 5.289,
+      "wind_direction": [
+        0.9338,
+        -0.3098,
+        0.1788
+      ],
+      "gust_magnitude": 3.953,
+      "gust_frequency": 4.428,
+      "turbulence_std": 0.349,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 1.03,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.401,
+      "inertia_scale": 1.204,
+      "waypoint_seed": 30042,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": true,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "ood_test_task_002",
+      "seed": 3043,
+      "split": "ood_test",
+      "wind_magnitude": 1.236,
+      "wind_direction": [
+        -0.8976,
+        -0.2117,
+        -0.3868
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.0,
+      "impulse_magnitude": 5.635,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.06,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.443,
+      "inertia_scale": 1.34,
+      "waypoint_seed": 30043,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": true,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "ood_test_task_003",
+      "seed": 3044,
+      "split": "ood_test",
+      "wind_magnitude": 1.443,
+      "wind_direction": [
+        0.8647,
+        0.4663,
+        0.1867
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.0,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 3.1,
+      "sensor_noise_scale": 3.906,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.391,
+      "inertia_scale": 1.365,
+      "waypoint_seed": 30044,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": true,
+        "has_motor_degradation": false,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "ood_test_task_004",
+      "seed": 3045,
+      "split": "ood_test",
+      "wind_magnitude": 0.0,
+      "wind_direction": [
+        0.6544,
+        0.6165,
+        0.4378
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.0,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 3.32,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.664,
+      "degraded_motors": [
+        1,
+        2
+      ],
+      "mass_scale": 1.351,
+      "inertia_scale": 1.27,
+      "waypoint_seed": 30045,
+      "compound_disturbance_flags": {
+        "has_wind": false,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": true,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "ood_test_task_005",
+      "seed": 3046,
+      "split": "ood_test",
+      "wind_magnitude": 3.888,
+      "wind_direction": [
+        -0.2905,
+        0.9271,
+        -0.2369
+      ],
+      "gust_magnitude": 2.37,
+      "gust_frequency": 3.231,
+      "turbulence_std": 0.211,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 3.22,
+      "sensor_noise_scale": 3.791,
+      "motor_degradation": 0.353,
+      "degraded_motors": [
+        0,
+        1
+      ],
+      "mass_scale": 1.475,
+      "inertia_scale": 1.421,
+      "waypoint_seed": 30046,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": true,
+        "has_impulse": false,
+        "has_sensor_noise": true,
+        "has_motor_degradation": true,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "ood_test_task_006",
+      "seed": 3047,
+      "split": "ood_test",
+      "wind_magnitude": 3.881,
+      "wind_direction": [
+        -0.276,
+        -0.9608,
+        0.026
+      ],
+      "gust_magnitude": 2.431,
+      "gust_frequency": 4.547,
+      "turbulence_std": 0.225,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 1.96,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.32,
+      "inertia_scale": 1.265,
+      "waypoint_seed": 30047,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": true,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "ood_test_task_007",
+      "seed": 3048,
+      "split": "ood_test",
+      "wind_magnitude": 1.81,
+      "wind_direction": [
+        0.0158,
+        -0.9496,
+        -0.3132
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.0,
+      "impulse_magnitude": 5.298,
+      "impulse_duration": 0.1,
+      "impulse_onset": 1.37,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.204,
+      "inertia_scale": 1.46,
+      "waypoint_seed": 30048,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": true,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "ood_test_task_008",
+      "seed": 3049,
+      "split": "ood_test",
+      "wind_magnitude": 1.562,
+      "wind_direction": [
+        -0.0342,
+        -0.9106,
+        0.4119
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.0,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 3.48,
+      "sensor_noise_scale": 4.687,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.257,
+      "inertia_scale": 1.491,
+      "waypoint_seed": 30049,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": true,
+        "has_motor_degradation": false,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "ood_test_task_009",
+      "seed": 3050,
+      "split": "ood_test",
+      "wind_magnitude": 0.0,
+      "wind_direction": [
+        0.8405,
+        -0.4754,
+        -0.2599
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.0,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.41,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.496,
+      "degraded_motors": [
+        1,
+        2
+      ],
+      "mass_scale": 1.391,
+      "inertia_scale": 1.288,
+      "waypoint_seed": 30050,
+      "compound_disturbance_flags": {
+        "has_wind": false,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": true,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "ood_test_task_010",
+      "seed": 3051,
+      "split": "ood_test",
+      "wind_magnitude": 3.125,
+      "wind_direction": [
+        0.5972,
+        -0.759,
+        0.2593
+      ],
+      "gust_magnitude": 2.525,
+      "gust_frequency": 2.672,
+      "turbulence_std": 0.189,
+      "impulse_magnitude": 4.063,
+      "impulse_duration": 0.1,
+      "impulse_onset": 1.08,
+      "sensor_noise_scale": 4.026,
+      "motor_degradation": 0.538,
+      "degraded_motors": [
+        0,
+        1
+      ],
+      "mass_scale": 1.377,
+      "inertia_scale": 1.23,
+      "waypoint_seed": 30051,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": true,
+        "has_impulse": true,
+        "has_sensor_noise": true,
+        "has_motor_degradation": true,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "ood_test_task_011",
+      "seed": 3052,
+      "split": "ood_test",
+      "wind_magnitude": 4.212,
+      "wind_direction": [
+        0.633,
+        0.722,
+        -0.2793
+      ],
+      "gust_magnitude": 2.657,
+      "gust_frequency": 4.165,
+      "turbulence_std": 0.424,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.13,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.339,
+      "inertia_scale": 1.436,
+      "waypoint_seed": 30052,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": true,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "ood_test_task_012",
+      "seed": 3053,
+      "split": "ood_test",
+      "wind_magnitude": 1.944,
+      "wind_direction": [
+        -0.158,
+        0.9543,
+        -0.2535
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.0,
+      "impulse_magnitude": 4.021,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.59,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.388,
+      "inertia_scale": 1.299,
+      "waypoint_seed": 30053,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": true,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "ood_test_task_013",
+      "seed": 3054,
+      "split": "ood_test",
+      "wind_magnitude": 1.669,
+      "wind_direction": [
+        0.8288,
+        0.5476,
+        -0.115
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.0,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 1.39,
+      "sensor_noise_scale": 4.963,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.239,
+      "inertia_scale": 1.364,
+      "waypoint_seed": 30054,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": true,
+        "has_motor_degradation": false,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "ood_test_task_014",
+      "seed": 3055,
+      "split": "ood_test",
+      "wind_magnitude": 0.0,
+      "wind_direction": [
+        0.7927,
+        -0.5074,
+        0.3378
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.0,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.11,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.43,
+      "degraded_motors": [
+        0,
+        1
+      ],
+      "mass_scale": 1.459,
+      "inertia_scale": 1.276,
+      "waypoint_seed": 30055,
+      "compound_disturbance_flags": {
+        "has_wind": false,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": true,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "ood_test_task_015",
+      "seed": 3056,
+      "split": "ood_test",
+      "wind_magnitude": 3.704,
+      "wind_direction": [
+        -0.9737,
+        0.1986,
+        0.1116
+      ],
+      "gust_magnitude": 1.641,
+      "gust_frequency": 2.774,
+      "turbulence_std": 0.254,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 1.4,
+      "sensor_noise_scale": 3.828,
+      "motor_degradation": 0.397,
+      "degraded_motors": [
+        0,
+        1
+      ],
+      "mass_scale": 1.328,
+      "inertia_scale": 1.494,
+      "waypoint_seed": 30056,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": true,
+        "has_impulse": false,
+        "has_sensor_noise": true,
+        "has_motor_degradation": true,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "ood_test_task_016",
+      "seed": 3057,
+      "split": "ood_test",
+      "wind_magnitude": 3.687,
+      "wind_direction": [
+        0.519,
+        -0.7669,
+        0.3774
+      ],
+      "gust_magnitude": 3.309,
+      "gust_frequency": 4.727,
+      "turbulence_std": 0.341,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 3.41,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.494,
+      "inertia_scale": 1.422,
+      "waypoint_seed": 30057,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": true,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "ood_test_task_017",
+      "seed": 3058,
+      "split": "ood_test",
+      "wind_magnitude": 1.244,
+      "wind_direction": [
+        0.634,
+        0.6461,
+        -0.425
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.0,
+      "impulse_magnitude": 5.922,
+      "impulse_duration": 0.1,
+      "impulse_onset": 1.29,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.28,
+      "inertia_scale": 1.275,
+      "waypoint_seed": 30058,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": true,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "ood_test_task_018",
+      "seed": 3059,
+      "split": "ood_test",
+      "wind_magnitude": 1.898,
+      "wind_direction": [
+        -0.502,
+        -0.8287,
+        -0.2474
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.0,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.3,
+      "sensor_noise_scale": 3.859,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.401,
+      "inertia_scale": 1.294,
+      "waypoint_seed": 30059,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": true,
+        "has_motor_degradation": false,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "ood_test_task_019",
+      "seed": 3060,
+      "split": "ood_test",
+      "wind_magnitude": 0.0,
+      "wind_direction": [
+        0.0171,
+        -0.9986,
+        0.0502
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.0,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 3.34,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.605,
+      "degraded_motors": [
+        0,
+        1
+      ],
+      "mass_scale": 1.365,
+      "inertia_scale": 1.438,
+      "waypoint_seed": 30060,
+      "compound_disturbance_flags": {
+        "has_wind": false,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": true,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "ood_test_task_020",
+      "seed": 3061,
+      "split": "ood_test",
+      "wind_magnitude": 3.942,
+      "wind_direction": [
+        0.8172,
+        0.4746,
+        0.327
+      ],
+      "gust_magnitude": 2.81,
+      "gust_frequency": 3.07,
+      "turbulence_std": 0.274,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 1.02,
+      "sensor_noise_scale": 3.661,
+      "motor_degradation": 0.474,
+      "degraded_motors": [
+        0,
+        1
+      ],
+      "mass_scale": 1.496,
+      "inertia_scale": 1.357,
+      "waypoint_seed": 30061,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": true,
+        "has_impulse": false,
+        "has_sensor_noise": true,
+        "has_motor_degradation": true,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "ood_test_task_021",
+      "seed": 3062,
+      "split": "ood_test",
+      "wind_magnitude": 3.27,
+      "wind_direction": [
+        0.5023,
+        0.8206,
+        -0.2725
+      ],
+      "gust_magnitude": 3.611,
+      "gust_frequency": 4.845,
+      "turbulence_std": 0.227,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.92,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.437,
+      "inertia_scale": 1.246,
+      "waypoint_seed": 30062,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": true,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "ood_test_task_022",
+      "seed": 3063,
+      "split": "ood_test",
+      "wind_magnitude": 1.846,
+      "wind_direction": [
+        0.8137,
+        -0.5783,
+        -0.0585
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.0,
+      "impulse_magnitude": 5.63,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.36,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.262,
+      "inertia_scale": 1.416,
+      "waypoint_seed": 30063,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": true,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "ood_test_task_023",
+      "seed": 3064,
+      "split": "ood_test",
+      "wind_magnitude": 1.354,
+      "wind_direction": [
+        -0.9548,
+        0.1263,
+        -0.269
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.0,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.48,
+      "sensor_noise_scale": 4.996,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.427,
+      "inertia_scale": 1.412,
+      "waypoint_seed": 30064,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": true,
+        "has_motor_degradation": false,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "ood_test_task_024",
+      "seed": 3065,
+      "split": "ood_test",
+      "wind_magnitude": 0.0,
+      "wind_direction": [
+        -0.5997,
+        -0.7712,
+        0.2136
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.0,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 1.25,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.615,
+      "degraded_motors": [
+        1,
+        2
+      ],
+      "mass_scale": 1.477,
+      "inertia_scale": 1.399,
+      "waypoint_seed": 30065,
+      "compound_disturbance_flags": {
+        "has_wind": false,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": true,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "ood_test_task_025",
+      "seed": 3066,
+      "split": "ood_test",
+      "wind_magnitude": 3.982,
+      "wind_direction": [
+        0.9618,
+        0.1802,
+        0.2063
+      ],
+      "gust_magnitude": 2.525,
+      "gust_frequency": 3.844,
+      "turbulence_std": 0.234,
+      "impulse_magnitude": 4.047,
+      "impulse_duration": 0.1,
+      "impulse_onset": 1.22,
+      "sensor_noise_scale": 3.631,
+      "motor_degradation": 0.507,
+      "degraded_motors": [
+        0,
+        1
+      ],
+      "mass_scale": 1.421,
+      "inertia_scale": 1.303,
+      "waypoint_seed": 30066,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": true,
+        "has_impulse": true,
+        "has_sensor_noise": true,
+        "has_motor_degradation": true,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "ood_test_task_026",
+      "seed": 3067,
+      "split": "ood_test",
+      "wind_magnitude": 3.506,
+      "wind_direction": [
+        -0.8934,
+        0.4346,
+        0.1138
+      ],
+      "gust_magnitude": 2.003,
+      "gust_frequency": 3.903,
+      "turbulence_std": 0.227,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.91,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.265,
+      "inertia_scale": 1.344,
+      "waypoint_seed": 30067,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": true,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "ood_test_task_027",
+      "seed": 3068,
+      "split": "ood_test",
+      "wind_magnitude": 1.631,
+      "wind_direction": [
+        0.2868,
+        -0.9011,
+        0.3253
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.0,
+      "impulse_magnitude": 5.21,
+      "impulse_duration": 0.1,
+      "impulse_onset": 1.21,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.289,
+      "inertia_scale": 1.306,
+      "waypoint_seed": 30068,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": true,
+        "has_sensor_noise": false,
+        "has_motor_degradation": false,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "ood_test_task_028",
+      "seed": 3069,
+      "split": "ood_test",
+      "wind_magnitude": 1.472,
+      "wind_direction": [
+        0.8825,
+        0.2685,
+        -0.386
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.0,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.92,
+      "sensor_noise_scale": 4.279,
+      "motor_degradation": 0.0,
+      "degraded_motors": [],
+      "mass_scale": 1.342,
+      "inertia_scale": 1.254,
+      "waypoint_seed": 30069,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": true,
+        "has_motor_degradation": false,
+        "is_compound": true
+      }
+    },
+    {
+      "task_id": "ood_test_task_029",
+      "seed": 3070,
+      "split": "ood_test",
+      "wind_magnitude": 0.0,
+      "wind_direction": [
+        -0.6019,
+        -0.7422,
+        0.2947
+      ],
+      "gust_magnitude": 0.0,
+      "gust_frequency": 1.0,
+      "turbulence_std": 0.0,
+      "impulse_magnitude": 0.0,
+      "impulse_duration": 0.1,
+      "impulse_onset": 1.73,
+      "sensor_noise_scale": 1.0,
+      "motor_degradation": 0.664,
+      "degraded_motors": [
+        0,
+        1
+      ],
+      "mass_scale": 1.241,
+      "inertia_scale": 1.258,
+      "waypoint_seed": 30070,
+      "compound_disturbance_flags": {
+        "has_wind": false,
+        "has_gusts": false,
+        "has_impulse": false,
+        "has_sensor_noise": false,
+        "has_motor_degradation": true,
+        "is_compound": false
+      }
+    },
+    {
+      "task_id": "ood_test_task_030",
+      "seed": 3071,
+      "split": "ood_test",
+      "wind_magnitude": 3.613,
+      "wind_direction": [
+        -0.3946,
+        -0.8519,
+        -0.3442
+      ],
+      "gust_magnitude": 2.949,
+      "gust_frequency": 2.505,
+      "turbulence_std": 0.192,
+      "impulse_magnitude": 4.98,
+      "impulse_duration": 0.1,
+      "impulse_onset": 2.33,
+      "sensor_noise_scale": 3.64,
+      "motor_degradation": 0.392,
+      "degraded_motors": [
+        0,
+        1
+      ],
+      "mass_scale": 1.285,
+      "inertia_scale": 1.224,
+      "waypoint_seed": 30071,
+      "compound_disturbance_flags": {
+        "has_wind": true,
+        "has_gusts": true,
+        "has_impulse": true,
+        "has_sensor_noise": true,
+        "has_motor_degradation": true,
+        "is_compound": true
+      }
+    }
+  ]
+}

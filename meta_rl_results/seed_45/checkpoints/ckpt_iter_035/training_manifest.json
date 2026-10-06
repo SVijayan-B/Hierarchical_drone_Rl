@@ -1,0 +1,8 @@
+{
+  "reproducibility": {
+    "master_seed": 45,
+    "explore_std": 0.05,
+    "learning_rate": 0.001,
+    "training_mode": "A"
+  }
+}

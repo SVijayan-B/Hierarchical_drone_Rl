@@ -1,0 +1,117 @@
+# MCR-UAV Meta-RL Task Distribution Configuration
+# Version: 1.0.0
+# Governing Standard: IEEE Research Formulation (Phase 2 & Phase 3)
+
+metadata:
+  project: MCR-UAV
+  description: Deterministic Meta-RL Task Generation Configuration
+  version: 1.0.0
+  author: Antigravity Research Engineer
+
+reproducibility:
+  master_seed: 42
+  split_seeds:
+    train_offset: 1000
+    val_offset: 2000
+    ood_test_offset: 3000
+  waypoint_seed_offsets:
+    train: 10000
+    val: 20000
+    ood_test: 30000
+
+dataset_splits:
+  train:
+    count: 80
+    description: In-distribution disturbances for meta-training
+  validation:
+    count: 20
+    description: In-distribution interpolation tasks with novel waypoint seeds
+  ood_test:
+    count: 30
+    description: Out-of-distribution unseen disturbances and severe compound faults
+
+parameter_ranges:
+  train_and_val:
+    wind_magnitude_mps:
+      min: 0.0
+      max: 2.5
+    gust_magnitude_mps:
+      min: 0.0
+      max: 1.5
+    gust_frequency_hz:
+      min: 0.5
+      max: 2.0
+    turbulence_std_mps:
+      min: 0.0
+      max: 0.15
+    impulse_magnitude_n:
+      min: 1.0
+      max: 3.0
+    impulse_duration_sec: 0.10
+    impulse_onset_sec:
+      min: 1.5
+      max: 3.5
+    sensor_noise_scale:
+      min: 1.0
+      max: 2.0
+    motor_degradation_fraction:
+      min: 0.0
+      max: 0.25
+    mass_scale:
+      min: 0.90
+      max: 1.15
+    inertia_scale:
+      min: 0.90
+      max: 1.15
+
+  ood_test:
+    wind_magnitude_mps:
+      min: 3.0
+      max: 5.5
+    gust_magnitude_mps:
+      min: 2.0
+      max: 4.0
+    gust_frequency_hz:
+      min: 2.5
+      max: 5.0
+    turbulence_std_mps:
+      min: 0.20
+      max: 0.45
+    impulse_magnitude_n:
+      min: 4.0
+      max: 6.0
+    impulse_duration_sec: 0.10
+    impulse_onset_sec:
+      min: 1.0
+      max: 3.5
+    sensor_noise_scale:
+      min: 3.5
+      max: 5.0
+    motor_degradation_fraction:
+      min: 0.30
+      max: 0.70
+    mass_scale:
+      min: 1.20
+      max: 1.50
+    inertia_scale:
+      min: 1.20
+      max: 1.50
+
+composition_rules:
+  train_mixture:
+    nominal_light_wind_pct: 20
+    gust_turbulence_pct: 20
+    impulse_perturbation_pct: 20
+    sensor_noise_attack_pct: 20
+    mild_actuator_degradation_pct: 20
+  ood_mixture:
+    extreme_wind_gust_pct: 20
+    high_impulse_shock_pct: 20
+    extreme_sensor_attack_pct: 20
+    severe_motor_loss_pct: 20
+    compound_multimodal_pct: 20
+
+motor_degradation_settings:
+  rotor_geometry: quad_x
+  rotor_indices: [0, 1, 2, 3] # 0=front-right, 1=rear-left, 2=front-left, 3=rear-right
+  asymmetric_pair_defaults: [0, 1] # Primary asymmetric failure pair

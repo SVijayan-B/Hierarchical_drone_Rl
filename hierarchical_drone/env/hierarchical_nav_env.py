@@ -1,6 +1,6 @@
 import random
 import inspect
-from typing import Dict, Optional, List, Tuple
+from typing import Dict, Optional, List, Tuple, Any
 
 import gymnasium as gym
 import numpy as np
@@ -21,6 +21,8 @@ from hierarchical_drone.config.settings import (
 from hierarchical_drone.sensors.imu import IMUSensor
 from hierarchical_drone.sensors.ultrasonic import UltrasonicArray
 from hierarchical_drone.controllers.adaptive_scheduler import AdaptiveGainScheduler
+from models import ReconfigurationController
+
 
 
 class HierarchicalNavEnv(gym.Env):
@@ -74,6 +76,11 @@ class HierarchicalNavEnv(gym.Env):
         if self.use_mpc_layer:
             from hierarchical_drone.controllers.mpc_controller import MPCController
             self.mpc = MPCController(horizon=20, dt=0.1)
+
+        # MCR-UAV Reconfiguration Controller
+        self.reconfig_controller = ReconfigurationController(beta_gain=0.05)
+        self.reconfig_active = False
+        self.debug_reconfig = False
 
         self.current_wind_magnitude = 0.0
         self.control_step_counter = 0
@@ -382,6 +389,23 @@ class HierarchicalNavEnv(gym.Env):
         return np.array([vx, vy, vz], dtype=np.float32), float(yaw_rate)
 
     def reset(self, *, seed=None, options=None):
+        self.reconfig_controller.reset()
+        self.reconfig_active = False
+        if self.use_mpc_layer:
+            self.mpc.reconfig_active = False
+            self.mpc.reconfig_horizon = 20
+            self.mpc.reconfig_alpha_q = 1.0
+            self.mpc.reconfig_alpha_r = 1.0
+
+        # Restore low-level controller coefficients and reset internal states
+        self.stab_ctrl.P_COEFF_FOR = np.copy(self.P_COEFF_FOR_BASE)
+        self.stab_ctrl.I_COEFF_FOR = np.copy(self.I_COEFF_FOR_BASE)
+        self.stab_ctrl.D_COEFF_FOR = np.copy(self.D_COEFF_FOR_BASE)
+        self.stab_ctrl.P_COEFF_TOR = np.copy(self.P_COEFF_TOR_BASE)
+        self.stab_ctrl.I_COEFF_TOR = np.copy(self.I_COEFF_TOR_BASE)
+        self.stab_ctrl.D_COEFF_TOR = np.copy(self.D_COEFF_TOR_BASE)
+        self.stab_ctrl.reset()
+
         if self.telemetry_logger is not None:
             if len(self.telemetry_logger.buffer) > 0:
                 self.telemetry_logger.save_episode(success=False)
@@ -533,6 +557,38 @@ class HierarchicalNavEnv(gym.Env):
 
         return obs_ret, {}
 
+    def apply_reconfiguration(self, c_t: Any) -> None:
+        """Apply a reconfiguration command from Meta-Supervisor."""
+        valid = self.reconfig_controller.apply_reconfiguration(c_t)
+        if valid:
+            self.reconfig_active = True
+        else:
+            self.reconfig_active = False  # fallback to nominal control
+
+        # Propagate parameters to the internal controllers
+        if self.use_mpc_layer:
+            self.mpc.reconfig_active = self.reconfig_active
+            if self.reconfig_active:
+                params = self.reconfig_controller.get_effective_params()
+                self.mpc.reconfig_alpha_q = params["alpha_q"]
+                self.mpc.reconfig_alpha_r = params["alpha_r"]
+                self.mpc.reconfig_horizon = params["horizon"]
+
+        # Logging / Debugging
+        if self.debug_reconfig:
+            params = self.reconfig_controller.get_effective_params()
+            print(
+                f"[MCR-UAV DEBUG] Step: {self.step_count} | valid={valid} | "
+                f"lambda_rl={params['lambda_rl']:.3f} | "
+                f"alpha_q={params['alpha_q']:.3f} | alpha_r={params['alpha_r']:.3f} | "
+                f"alpha_p={params['alpha_p']:.3f} | alpha_i={params['alpha_i']:.3f} | "
+                f"alpha_d={params['alpha_d']:.3f} | H={params['horizon']}"
+            )
+
+    def set_reconfiguration(self, c_t: Any) -> None:
+        """Alias for apply_reconfiguration to support set_reconfiguration API."""
+        self.apply_reconfiguration(c_t)
+
     def step(self, action):
         self.step_count += 1
         self.prev_action = np.asarray(action, dtype=np.float32)
@@ -582,6 +638,9 @@ class HierarchicalNavEnv(gym.Env):
 
         vel_mag = float(np.linalg.norm(s[10:13]))
         dist_to_target = float(np.linalg.norm(self.target - cur_pos))
+
+        # Determine the high-level command blending weight lambda_RL
+        weight_RL = self.reconfig_controller.effective_lambda_rl if self.reconfig_active else (1.0 - self.guidance_blend)
 
         # Takeoff phase vs. Navigation phase
         if self.step_count <= self.takeoff_steps:
@@ -666,7 +725,7 @@ class HierarchicalNavEnv(gym.Env):
                     wp_offset = self.smoothed_action[0:3] * 0.15
                     rl_wp = cur_pos + wp_offset
                     
-                    target_wp = (1.0 - self.guidance_blend) * rl_wp + self.guidance_blend * target_wp_astar
+                    target_wp = weight_RL * rl_wp + (1.0 - weight_RL) * target_wp_astar
                     yaw_rate_cmd = self.smoothed_action[3] * self.action_cfg.yaw_rate_max
                     
                     cur_vel = s[10:13]
@@ -841,18 +900,36 @@ class HierarchicalNavEnv(gym.Env):
                 )
                 self.target_gain_scale_att = self.target_gain_scale_pos
 
-            # Interpolate gains at each control step for smooth transitions (alpha_gain = 0.05)
-            alpha_gain = 0.05
-            self.gain_scale_pos = alpha_gain * self.target_gain_scale_pos + (1.0 - alpha_gain) * self.gain_scale_pos
-            self.gain_scale_att = alpha_gain * self.target_gain_scale_att + (1.0 - alpha_gain) * self.gain_scale_att
+            # 1. Update Low-level controller gains (heuristically or via reconfiguration controller)
+            if self.reconfig_active:
+                # Update effective smoothed PID gains at 1200 Hz using ReconfigurationController
+                self.reconfig_controller.smooth_inner_step()
+                params = self.reconfig_controller.get_effective_params()
+                
+                # Apply reconfigured gain scales to Low-level controller
+                self.stab_ctrl.P_COEFF_FOR = self.P_COEFF_FOR_BASE * params["alpha_p"]
+                self.stab_ctrl.I_COEFF_FOR = self.I_COEFF_FOR_BASE * params["alpha_i"]
+                self.stab_ctrl.D_COEFF_FOR = self.D_COEFF_FOR_BASE * params["alpha_d"]
+                self.stab_ctrl.P_COEFF_TOR = self.P_COEFF_TOR_BASE * params["alpha_p"]
+                self.stab_ctrl.I_COEFF_TOR = self.I_COEFF_TOR_BASE * params["alpha_i"]
+                self.stab_ctrl.D_COEFF_TOR = self.D_COEFF_TOR_BASE * params["alpha_d"]
+                
+                # Maintain baseline gain scale trackers for logging/compatibility
+                self.gain_scale_pos = params["alpha_p"]
+                self.gain_scale_att = params["alpha_p"]
+            else:
+                # Interpolate gains at each control step for smooth transitions (alpha_gain = 0.05)
+                alpha_gain = 0.05
+                self.gain_scale_pos = alpha_gain * self.target_gain_scale_pos + (1.0 - alpha_gain) * self.gain_scale_pos
+                self.gain_scale_att = alpha_gain * self.target_gain_scale_att + (1.0 - alpha_gain) * self.gain_scale_att
 
-            # Apply gain scales to Low-level controller
-            self.stab_ctrl.P_COEFF_FOR = self.P_COEFF_FOR_BASE * self.gain_scale_pos
-            self.stab_ctrl.I_COEFF_FOR = self.I_COEFF_FOR_BASE * self.gain_scale_pos
-            self.stab_ctrl.D_COEFF_FOR = self.D_COEFF_FOR_BASE * self.gain_scale_pos
-            self.stab_ctrl.P_COEFF_TOR = self.P_COEFF_TOR_BASE * self.gain_scale_att
-            self.stab_ctrl.I_COEFF_TOR = self.I_COEFF_TOR_BASE * self.gain_scale_att
-            self.stab_ctrl.D_COEFF_TOR = self.D_COEFF_TOR_BASE * self.gain_scale_att
+                # Apply gain scales to Low-level controller
+                self.stab_ctrl.P_COEFF_FOR = self.P_COEFF_FOR_BASE * self.gain_scale_pos
+                self.stab_ctrl.I_COEFF_FOR = self.I_COEFF_FOR_BASE * self.gain_scale_pos
+                self.stab_ctrl.D_COEFF_FOR = self.D_COEFF_FOR_BASE * self.gain_scale_pos
+                self.stab_ctrl.P_COEFF_TOR = self.P_COEFF_TOR_BASE * self.gain_scale_att
+                self.stab_ctrl.I_COEFF_TOR = self.I_COEFF_TOR_BASE * self.gain_scale_att
+                self.stab_ctrl.D_COEFF_TOR = self.D_COEFF_TOR_BASE * self.gain_scale_att
 
             # 2. Get inner step targets
             if self.step_count <= self.takeoff_steps:
@@ -865,7 +942,7 @@ class HierarchicalNavEnv(gym.Env):
                 cur_vel_inner = s[10:13]
                 if not self.demo_guided_mode and self.step_count > self.takeoff_steps:
                     rl_wp = cur_pos_inner + wp_offset
-                    target_wp_inner = (1.0 - self.guidance_blend) * rl_wp + self.guidance_blend * target_wp_astar_inner
+                    target_wp_inner = weight_RL * rl_wp + (1.0 - weight_RL) * target_wp_astar_inner
                 else:
                     target_wp_inner = target_wp_astar_inner
                 
@@ -903,7 +980,7 @@ class HierarchicalNavEnv(gym.Env):
                     guide_vel[2] = float(np.clip(guide_vel[2], -self.action_cfg.vz_max, self.action_cfg.vz_max))
 
                 ramp = float(np.clip(self.step_count / max(1, self.takeoff_steps), 0.10, 1.0))
-                mixed_vel = (1.0 - self.guidance_blend) * vel_cmd + self.guidance_blend * guide_vel
+                mixed_vel = weight_RL * vel_cmd + (1.0 - weight_RL) * guide_vel
                 mixed_vel *= ramp
 
             if self.hover_z_ref > 1.05 and s[2] < 1.45:

@@ -68,6 +68,12 @@ class MPCController:
         self.last_actual_horizon_logged = self.N
         self.switching_frequency = 0.0
 
+        # MCR-UAV Reconfiguration settings
+        self.reconfig_active = False
+        self.reconfig_alpha_q = 1.0
+        self.reconfig_alpha_r = 1.0
+        self.reconfig_horizon = 20
+
     def compute_control(
         self,
         cur_pos: np.ndarray,
@@ -107,7 +113,13 @@ class MPCController:
         """
         # 1. Select Horizon (N) based on complexity
         self.step_counter += 1
-        if not adaptive:
+        if self.reconfig_active:
+            N = int(self.reconfig_horizon)
+            q_pos_scale = float(self.reconfig_alpha_q)
+            r_scale = float(self.reconfig_alpha_r)
+            self.last_target_horizon_logged = N
+            self.last_actual_horizon_logged = N
+        elif not adaptive:
             N = self.N
             q_pos_scale = 1.0
             r_scale = 1.0
@@ -158,11 +170,19 @@ class MPCController:
         C = self.C_dict[N]
 
         # Construct dynamic Q_d and R_d matrices
-        q_single = np.diag([12.0 * q_pos_scale, 12.0 * q_pos_scale, 12.0 * q_pos_scale, 0.4, 0.4, 0.4])
-        Q_d = np.kron(np.eye(N), q_single)
+        if self.reconfig_active:
+            q_single_nominal = np.diag([12.0, 12.0, 12.0, 0.4, 0.4, 0.4])
+            r_single_nominal = np.diag([1.2, 1.2, 1.2])
+            Q_0 = np.kron(np.eye(N), q_single_nominal)
+            R_0 = np.kron(np.eye(N), r_single_nominal)
+            Q_d = q_pos_scale * Q_0
+            R_d = r_scale * R_0
+        else:
+            q_single = np.diag([12.0 * q_pos_scale, 12.0 * q_pos_scale, 12.0 * q_pos_scale, 0.4, 0.4, 0.4])
+            Q_d = np.kron(np.eye(N), q_single)
 
-        r_single = np.diag([1.2 * r_scale, 1.2 * r_scale, 1.2 * r_scale])
-        R_d = np.kron(np.eye(N), r_single)
+            r_single = np.diag([1.2 * r_scale, 1.2 * r_scale, 1.2 * r_scale])
+            R_d = np.kron(np.eye(N), r_single)
 
         # Solve for the unconstrained optimal gain matrix K_mpc
         H_cost = C.T @ Q_d @ C + R_d
